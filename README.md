@@ -55,7 +55,7 @@ How much you gain depends on how much of the view is hidden. In a dark forest mo
 
 While flying at 32 chunks, the slowest 1% of frames got 15 to 36% faster, and the longest frame in the jungle went from 18.9 ms to 11.3 ms. At 16 chunks the difference was within the noise between runs.
 
-Vitrail in these runs was [Vultrum's build of Vitrail](#vitrail), which has a few speedups that Vitrail's own release doesn't have yet. With Vitrail from Modrinth, FPS will be somewhat lower overall.
+Vitrail in these runs was [Vultrum's build of Vitrail](https://github.com/DebZakari/vitrail-shaders/releases/tag/0.12.0-beta.vultrum.2), which has a few speedups that Vitrail's own release doesn't have yet. With Vitrail from Modrinth, FPS will be somewhat lower overall.
 
 <details>
 <summary>All numbers</summary>
