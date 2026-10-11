@@ -19,7 +19,9 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/savanna.jpg" alt="A savanna valley with a river, rendered with the Complementary Unbound shader pack through Vitrail, with Vultrum">
+  <img src="docs/images/hero.webp" alt="The same view without Vultrum on the left and with it on the right, with a divider sweeping across. Dark forest 270 to 348 FPS (+29%), snowy peaks 263 to 296 (+12%), savanna hillside 329 to 369 (+12%). Both sides look the same.">
+  <br>
+  <sub>Left without Vultrum, right with it. The same picture, more frames.</sub>
 </p>
 
 > [!NOTE]
