@@ -1,0 +1,23 @@
+{
+  "world": "vultrum-robust",
+  "seed": 20261008,
+  "fullscreen": true,
+  "warmupSeconds": 2,
+  "recordSeconds": 3,
+  "renderDistances": [16],
+  "viewpoints": [
+    { "name": "start", "x": 0, "z": 0, "aboveGround": 60, "yaw": 135, "pitch": 30 },
+    { "name": "reload", "x": 0, "z": 0, "aboveGround": 60, "yaw": 135, "pitch": 30, "before": ["reload"] },
+    { "name": "pack-off", "x": 0, "z": 0, "aboveGround": 60, "yaw": 135, "pitch": 30, "before": ["pack-off"] },
+    { "name": "pack-off-sweep", "locate": "biome minecraft:jungle", "x": 48, "z": -48, "aboveGround": 0, "ignoreLeaves": true,
+      "yaw": -135, "pitch": 0, "motion": { "turn": 60, "step": 3, "period": 3 } },
+    { "name": "pack-on", "x": 0, "z": 0, "aboveGround": 60, "yaw": 135, "pitch": 30, "before": ["pack-on"] },
+    { "name": "nether-roof", "dimension": "minecraft:the_nether", "x": 0, "z": 0, "aboveGround": 12, "yaw": 135, "pitch": 35 },
+    { "name": "nether-low", "dimension": "minecraft:the_nether", "x": 0, "z": 0, "y": 40, "yaw": 135, "pitch": 0 },
+    { "name": "end", "dimension": "minecraft:the_end", "x": 60, "z": 20, "aboveGround": 15, "yaw": 108, "pitch": 20 },
+    { "name": "back", "x": 0, "z": 0, "aboveGround": 60, "yaw": 135, "pitch": 30 },
+    { "name": "resize", "x": 0, "z": 0, "aboveGround": 60, "yaw": 135, "pitch": 30, "before": ["resize"] },
+    { "name": "fullscreen", "x": 0, "z": 0, "aboveGround": 60, "yaw": 135, "pitch": 30, "before": ["fullscreen"] },
+    { "name": "rejoin", "x": 0, "z": 0, "aboveGround": 60, "yaw": 135, "pitch": 30, "before": ["rejoin"] }
+  ]
+}

@@ -1,0 +1,16 @@
+.idea/
+*.iml
+.vscode/
+.gradle/
+build/
+out/
+run/
+run-shaders/
+run-full/
+bench-runs/
+*.hprof
+hs_err_pid*
+__pycache__/
+run-compat*/
+run-server/
+releases/

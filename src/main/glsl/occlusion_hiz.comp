@@ -1,0 +1,136 @@
+#version 460
+#extension GL_EXT_samplerless_texture_functions : require
+
+// Builds the Hi-Z pyramid from main depth (reversed-Z: keep the minimum, the farthest).
+// A level-0 texel covers 8x8 pixels, and each level halves the one below, rounding up, so a level-L texel
+// covers exactly the 8·2^L-pixel square at its position. Pixels past the screen edge count as nearest (1.0),
+// which drops them out of the minimum.
+// Mode 0: one workgroup per 64x64-pixel tile builds levels 0-3 in shared memory.
+// Mode 1: builds level `level` from the one below, for levels too big for mode 2 (none at 1080p or 4K).
+// Mode 2: one workgroup builds level `level` and every level above it.
+
+const uint GROUP = 256u; // HizLevels.GROUP: one thread per 4x4-pixel quarter of a tile's 8x8 level-0 texels
+layout(local_size_x = GROUP) in;
+
+layout(std430, binding = 0) readonly buffer Frame {
+    mat4 viewProj;
+    ivec4 cameraInt;
+    vec4 cameraFrac;
+    uint frame;
+    uint commandBase;
+    uint commandCount;
+    uint levels;
+    uvec2 depthSize;
+    uvec2 size0;
+};
+layout(std430, binding = 3) buffer HiZ { float hiz[]; };
+layout(binding = 5) uniform texture2D mainDepth;
+layout(push_constant) uniform Push { uint mode; uint level; } push;
+
+const int BLOCK = 8;
+const uint TAIL_TEXELS = 1024u; // HizLevels.TAIL_TEXELS
+
+shared float cells[TAIL_TEXELS]; // tile() uses the first 340
+
+uvec2 levelSize(uint level) { return (size0 + (1u << level) - 1u) >> level; }
+
+uint levelOffset(uint level) {
+    uint offset = 0u;
+    for (uint l = 0u; l < level; l++) { uvec2 s = levelSize(l); offset += s.x * s.y; }
+    return offset;
+}
+
+void store(uint level, uvec2 texel, float farthest) {
+    uvec2 size = levelSize(level);
+    if (level < levels && all(lessThan(texel, size))) hiz[levelOffset(level) + texel.y * size.x + texel.x] = farthest;
+}
+
+// The 2x2 texels of the level below, read from the buffer.
+float fromBelow(uint level, uvec2 texel) {
+    uvec2 below = levelSize(level - 1u);
+    uint offset = levelOffset(level - 1u);
+    float farthest = 1.0;
+    for (uint y = 0u; y < 2u; y++)
+        for (uint x = 0u; x < 2u; x++) {
+            uvec2 s = texel * 2u + uvec2(x, y);
+            if (all(lessThan(s, below))) farthest = min(farthest, hiz[offset + s.y * below.x + s.x]);
+        }
+    return farthest;
+}
+
+// cells: 0-255 quarter blocks (4x4 pixels), 256-319 level 0, 320-335 level 1, 336-339 level 2.
+void tile() {
+    uint t = gl_LocalInvocationIndex;
+    uvec2 base = gl_WorkGroupID.xy * 8u; // level-0 texel at the tile's corner
+    ivec2 origin = ivec2(base + uvec2((t >> 2u) & 7u, t >> 5u)) * BLOCK + ivec2(t & 1u, (t >> 1u) & 1u) * 4;
+    float farthest = 1.0;
+    for (int y = 0; y < 4; y++)
+        for (int x = 0; x < 4; x++) {
+            ivec2 p = origin + ivec2(x, y);
+            if (all(lessThan(p, ivec2(depthSize)))) farthest = min(farthest, texelFetch(mainDepth, p, 0).r);
+        }
+    cells[t] = farthest;
+    barrier();
+    if (t < 64u) {
+        farthest = min(min(cells[t * 4u], cells[t * 4u + 1u]), min(cells[t * 4u + 2u], cells[t * 4u + 3u]));
+        store(0u, base + uvec2(t & 7u, t >> 3u), farthest);
+        cells[256u + t] = farthest;
+    }
+    barrier();
+    if (t < 16u) {
+        uvec2 c = uvec2(t & 3u, t >> 2u) * 2u;
+        uint at = 256u + c.y * 8u + c.x;
+        farthest = min(min(cells[at], cells[at + 1u]), min(cells[at + 8u], cells[at + 9u]));
+        store(1u, base / 2u + uvec2(t & 3u, t >> 2u), farthest);
+        cells[320u + t] = farthest;
+    }
+    barrier();
+    if (t < 4u) {
+        uvec2 c = uvec2(t & 1u, t >> 1u) * 2u;
+        uint at = 320u + c.y * 4u + c.x;
+        farthest = min(min(cells[at], cells[at + 1u]), min(cells[at + 4u], cells[at + 5u]));
+        store(2u, base / 4u + uvec2(t & 1u, t >> 1u), farthest);
+        cells[336u + t] = farthest;
+    }
+    barrier();
+    if (t == 0u) store(3u, gl_WorkGroupID.xy, min(min(cells[336], cells[337]), min(cells[338], cells[339])));
+}
+
+void tail() {
+    uint t = gl_LocalInvocationIndex;
+    for (uint level = push.level; level < levels; level++) {
+        uvec2 size = levelSize(level), below = levelSize(level - 1u);
+        uint count = size.x * size.y;
+        float farthest[TAIL_TEXELS / GROUP];
+        for (uint k = 0u; k < TAIL_TEXELS / GROUP; k++) {
+            uint i = t + k * GROUP;
+            farthest[k] = 1.0;
+            if (i >= count) continue;
+            uvec2 texel = uvec2(i % size.x, i / size.x);
+            if (level == push.level) farthest[k] = fromBelow(level, texel);
+            else
+                for (uint y = 0u; y < 2u; y++)
+                    for (uint x = 0u; x < 2u; x++) {
+                        uvec2 s = texel * 2u + uvec2(x, y);
+                        if (all(lessThan(s, below))) farthest[k] = min(farthest[k], cells[s.y * below.x + s.x]);
+                    }
+            hiz[levelOffset(level) + i] = farthest[k];
+        }
+        barrier();
+        for (uint k = 0u; k < TAIL_TEXELS / GROUP; k++)
+            if (t + k * GROUP < count) cells[t + k * GROUP] = farthest[k];
+        barrier();
+    }
+}
+
+void main() {
+    if (push.mode == 0u) {
+        tile();
+    } else if (push.mode == 1u) {
+        uvec2 size = levelSize(push.level);
+        uint i = gl_GlobalInvocationID.x;
+        if (i < size.x * size.y) hiz[levelOffset(push.level) + i] = fromBelow(push.level, uvec2(i % size.x, i / size.x));
+    } else {
+        tail();
+    }
+}

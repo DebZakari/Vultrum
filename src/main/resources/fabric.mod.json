@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "id": "vultrum",
+  "version": "${version}",
+  "name": "Vultrum",
+  "description": "More FPS with shader packs and smoother chunk loading for Minecraft 26.3 on Vulkan. A Sodium add-on.",
+  "authors": ["DebZakari"],
+  "contact": {
+    "homepage": "https://github.com/DebZakari/Vultrum",
+    "sources": "https://github.com/DebZakari/Vultrum",
+    "issues": "https://github.com/DebZakari/Vultrum/issues"
+  },
+  "license": "LGPL-3.0-only",
+  "icon": "assets/vultrum/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["dev.vultrum.VultrumClient"],
+    "sodium:config_api_user": ["dev.vultrum.VultrumOptions"]
+  },
+  "mixins": ["vultrum.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "minecraft": "26.3",
+    "java": ">=25",
+    "sodium": ">=0.9.3-alpha.1"
+  },
+  "suggests": {
+    "vitrail": ">=0.12.0-alpha <0.13.0-alpha"
+  },
+  "conflicts": {
+    "nvidium": "*"
+  }
+}

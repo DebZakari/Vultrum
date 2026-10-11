@@ -1,0 +1,19 @@
+{
+  "vultrum.options.page": "Culling",
+  "vultrum.options.page.loading": "Loading",
+  "vultrum.options.group.shadow": "Shadow map",
+  "vultrum.options.occlusion_cull": "GPU Occlusion Culling",
+  "vultrum.options.occlusion_cull.tooltip": "Skips terrain hidden behind other terrain, found on the GPU each frame. Needs a Vitrail shader pack enabled at launch.\n\nTurns itself off in open scenes, where it would cost more than it saves.",
+  "vultrum.options.shadow_face_cull": "Light-Facing Shadow Faces",
+  "vultrum.options.shadow_face_cull.tooltip": "Draws only the light-facing sides of solid blocks into the shadow map, where the terrain between them and the light is drawn too. Shadows look the same. About 5% more FPS at noon in tests. Needs a Vitrail shader pack.\n\nPaused for packs that voxelise their shadow pass.",
+  "vultrum.options.sunless_shadow": "Skip Sunless Terrain",
+  "vultrum.options.sunless_shadow.tooltip": "Leaves terrain that sunlight can't reach, such as caves, out of the shadow map. About 1% more FPS in tests, and shadows looked the same. Needs a Vitrail shader pack.\n\nPaused for packs that voxelise their shadow pass.",
+  "vultrum.options.packet_budget": "Spread Chunk Arrivals",
+  "vultrum.options.packet_budget.tooltip": "Handles at most 1 ms of the server's packets a frame, so a burst of new chunks spreads over several frames. Flying into new terrain at 32 chunks stuttered 37-84% less in tests.\n\nPackets held back for 50 ms are all handled at the next frame.",
+  "vultrum.options.arena_cap": "Smaller Terrain Buffers",
+  "vultrum.options.arena_cap.tooltip": "Limits each new buffer Sodium creates for terrain to 96 MiB, unless its terrain needs more. Creating a larger one stalled the GPU for up to 5 ms, a stutter each time loading terrain filled the old buffers.\n\nUses more video memory: up to 0.6 GB more when flying fast at 32 chunks.",
+  "vultrum.options.unload_budget": "Spread Chunk Unloads",
+  "vultrum.options.unload_budget.tooltip": "Removes about 0.25 ms of chunks a frame from Sodium's terrain (more while thousands wait), so the chunks that leave the view aren't all removed in one frame. Flying at 32 chunks stuttered about a third less often in tests, and the longest frame after a long teleport was less than half as long.\n\nChunks waiting to be removed keep their video memory a little longer.",
+  "vultrum.options.reclaim_thread": "Background Buffer Cleanup",
+  "vultrum.options.reclaim_thread.tooltip": "Tidies up after Sodium's discarded terrain buffers on a thread of its own. Without it, the frame after a garbage collection tidies up tens of thousands of them at once: up to 33 ms in tests.\n\nThe work moves to another CPU core; it doesn't get smaller."
+}

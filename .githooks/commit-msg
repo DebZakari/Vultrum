@@ -1,0 +1,42 @@
+#!/bin/sh
+# Enforces <type>[(scope)]: <subject> on the first line of a commit message.
+# Enable once per clone: git config core.hooksPath .githooks
+
+header=$(grep -v '^#' "$1" | sed -n '1p' | tr -d '\r')
+
+case "$header" in
+    Merge\ *|Revert\ *|fixup!\ *|squash!\ *|amend!\ *) exit 0 ;;
+esac
+
+types='feat|fix|docs|style|refactor|test|chore|perf|ci|build|temp'
+pattern="^($types)(\([a-z0-9._/-]+\))?!?: [^A-Z].*[^.]$"
+
+if printf '%s\n' "$header" | grep -Eq "$pattern" && [ ${#header} -le 100 ]; then
+    exit 0
+fi
+
+cat >&2 <<EOF
+
+************* Invalid Git Commit Message **************
+commit message: $header
+correct format: <type>[(scope)]: <subject>
+example:        docs: update README to add developer tips
+
+type:
+  feat      A new feature.
+  fix       A bug fix.
+  docs      Documentation only changes.
+  style     Changes that do not affect the meaning of the code (white-space, formatting, etc).
+  refactor  A code change that neither fixes a bug nor adds a feature.
+  test      Adding missing tests or correcting existing ones.
+  chore     Changes to the build process or auxiliary tools and libraries.
+  perf      A code change that improves performance.
+  ci        Changes to your CI configuration files and scripts.
+  build     Changes that affect the build system or external dependencies.
+  temp      Temporary commit that won't be included in your CHANGELOG.
+
+scope:   optional, lowercase, e.g. bench, cull, mesh, upload, vitrail.
+subject: present tense, not capitalized, no period at the end, header <= 100 chars.
+
+EOF
+exit 1

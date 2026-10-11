@@ -1,0 +1,110 @@
+#version 460
+#extension GL_KHR_shader_subgroup_arithmetic : require
+#extension GL_KHR_shader_subgroup_basic : require
+
+// One invocation per Sodium indirect command of the main view. Mode 0 (phase 1) draws the sections that
+// were visible last frame. Mode 1 (phase 2) tests every section against the Hi-Z of what phase 1 drew,
+// records visibility for the next frame and draws the newly visible ones.
+
+layout(local_size_x = 64) in;
+
+layout(std430, binding = 0) readonly buffer Frame {
+    mat4 viewProj;      // camera-relative
+    ivec3 cameraInt;
+    uint pinned;        // benchmark: keep last frame's visibility, record none
+    vec4 cameraFrac;
+    uint frame;
+    uint commandBase;   // ring index of sections[0]
+    uint commandCount;
+    uint levels;
+    uvec2 depthSize;
+    uvec2 size0;
+    ivec4 sections[];   // section x, y, z and visibility key; key < 0: leave the command alone
+};
+// VkDrawIndexedIndirectCommand: indexCount, instanceCount, firstIndex, vertexOffset, firstInstance.
+layout(std430, binding = 1) buffer Commands { uint words[]; };
+layout(std430, binding = 2) buffer Visibility { uint visibleFrame[]; };
+layout(std430, binding = 3) readonly buffer HiZ { float hiz[]; };
+// Per-frame totals, mirrored by CullCounters. commands and triangles: what phase 2 tested.
+layout(std430, binding = 4) buffer Stats {
+    uint commands;
+    uint phase1Commands;
+    uint phase2Commands;
+    uint triangles;
+    uint phase1Triangles;
+    uint phase2Triangles;
+};
+layout(push_constant) uniform Push { uint mode; uint level; } push;
+
+const int BLOCK = 8;
+const int MAX_SPAN = 4;
+
+uvec2 levelSize(uint level) { return (size0 + (1u << level) - 1u) >> level; } // as in occlusion_hiz.comp
+
+uint levelOffset(uint level) {
+    uint offset = 0u;
+    for (uint l = 0u; l < level; l++) { uvec2 s = levelSize(l); offset += s.x * s.y; }
+    return offset;
+}
+
+int pixel(float ndc, int size) { return clamp(int(floor((ndc * 0.5 + 0.5) * float(size))), 0, size - 1); }
+
+// Whether any texel the box covers is farther than the box's nearest point (reversed-Z: smaller).
+// Boxes that cross the near plane or leave the screen count as visible.
+bool boxVisible(ivec3 section) {
+    vec3 base = vec3(section * 16 - cameraInt.xyz) - cameraFrac.xyz;
+    vec2 lo = vec2(1e30), hi = vec2(-1e30);
+    float nearest = -1e30;
+    for (int c = 0; c < 8; c++) {
+        vec4 p = viewProj * vec4(base + vec3(c & 1, (c >> 1) & 1, (c >> 2) & 1) * 16.0, 1.0);
+        if (p.w < 1e-3) return true;
+        vec3 ndc = p.xyz / p.w;
+        lo = min(lo, ndc.xy);
+        hi = max(hi, ndc.xy);
+        nearest = max(nearest, ndc.z);
+    }
+    if (any(lessThan(hi, vec2(-1.0))) || any(greaterThan(lo, vec2(1.0)))) return true;
+    ivec2 full = ivec2(depthSize);
+    // One pixel of slack each way covers the shader pack's sub-pixel TAA jitter.
+    ivec2 p0 = max(ivec2(pixel(lo.x, full.x), pixel(lo.y, full.y)) - 1, ivec2(0)) / BLOCK;
+    ivec2 p1 = min(ivec2(pixel(hi.x, full.x), pixel(hi.y, full.y)) + 1, full - 1) / BLOCK;
+    uint level = 0u;
+    while (level + 1u < levels && ((p1.x >> level) - (p0.x >> level) >= MAX_SPAN || (p1.y >> level) - (p0.y >> level) >= MAX_SPAN)) level++;
+    ivec2 size = ivec2(levelSize(level));
+    ivec2 a = min(p0 >> level, size - 1), b = min(p1 >> level, size - 1);
+    uint offset = levelOffset(level);
+    for (int y = a.y; y <= b.y; y++)
+        for (int x = a.x; x <= b.x; x++)
+            if (hiz[offset + uint(y * size.x + x)] <= nearest) return true;
+    return false;
+}
+
+// Adds value over the subgroup to a Stats member with one atomic.
+#define COUNT(member, value) { uint total = subgroupAdd(value); if (subgroupElect() && total != 0u) atomicAdd(member, total); }
+
+void main() {
+    uint i = gl_GlobalInvocationID.x;
+    ivec4 s = i < commandCount ? sections[i] : ivec4(-1);
+    bool live = s.w >= 0;
+    uint c = (commandBase + i) * 5u;
+    uint listed = live ? words[c] / 3u : 0u;
+    bool draw = false;
+    if (push.mode == 0u) {
+        draw = live && visibleFrame[s.w] == frame - 1u;
+        if (live) words[c + 1u] = draw ? 1u : 0u;
+        COUNT(phase1Commands, draw ? 1u : 0u);
+        COUNT(phase1Triangles, draw ? listed : 0u);
+        return;
+    }
+    if (live) {
+        bool drawn = words[c + 1u] != 0u;
+        bool visible = boxVisible(s.xyz);
+        if (visible && pinned == 0u) visibleFrame[s.w] = frame;
+        draw = visible && !drawn;
+        words[c + 1u] = draw ? 1u : 0u;
+    }
+    COUNT(commands, live ? 1u : 0u);
+    COUNT(phase2Commands, draw ? 1u : 0u);
+    COUNT(triangles, listed);
+    COUNT(phase2Triangles, draw ? listed : 0u);
+}

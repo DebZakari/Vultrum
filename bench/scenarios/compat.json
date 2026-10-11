@@ -1,0 +1,161 @@
+{
+  "world": "vultrum-bench",
+  "seed": 20261008,
+  "fullscreen": true,
+  "warmupSeconds": 2,
+  "recordSeconds": 5,
+  "renderDistances": [
+    16
+  ],
+  "viewpoints": [
+    {
+      "name": "plains-mix",
+      "locate": "biome minecraft:plains",
+      "aboveGround": 3,
+      "yaw": 180,
+      "pitch": 20,
+      "setup": [
+        {
+          "command": "kill @e[tag=vultrum_bench]"
+        },
+        {
+          "command": "kill @e[type=minecraft:item]"
+        },
+        {
+          "command": "execute positioned {x} {y} {z} rotated {yaw} 0 run fill ^-12 ^1 ^3 ^12 ^1 ^3 minecraft:air replace minecraft:chest"
+        },
+        {
+          "command": "execute positioned {x} {y} {z} rotated {yaw} 0 run fill ^-12 ^1 ^3 ^12 ^1 ^3 minecraft:chest[facing=south] replace minecraft:air"
+        },
+        {
+          "command": "execute positioned {x} {y} {z} rotated {yaw} 0 run setblock ^-1 ^1 ^6 minecraft:oak_sign"
+        },
+        {
+          "command": "execute positioned {x} {y} {z} rotated {yaw} 0 run setblock ^1 ^1 ^6 minecraft:white_banner"
+        },
+        {
+          "command": "execute positioned {x} {y} {z} rotated {yaw} 0 positioned ^{u} ^ ^{v} positioned over motion_blocking run summon minecraft:cow ~ ~ ~ {NoAI:1b,Silent:1b,PersistenceRequired:1b,Tags:[\"vultrum_bench\"]}",
+          "u": [
+            -12,
+            12,
+            6
+          ],
+          "v": [
+            16,
+            16,
+            1
+          ]
+        },
+        {
+          "command": "execute positioned {x} {y} {z} rotated {yaw} 0 positioned ^{u} ^ ^{v} positioned over motion_blocking run summon minecraft:sheep ~ ~ ~ {NoAI:1b,Silent:1b,PersistenceRequired:1b,Tags:[\"vultrum_bench\"]}",
+          "u": [
+            -12,
+            12,
+            6
+          ],
+          "v": [
+            19,
+            19,
+            1
+          ]
+        },
+        {
+          "command": "execute positioned {x} {y} {z} rotated {yaw} 0 positioned ^{u} ^ ^{v} positioned over motion_blocking run summon minecraft:husk ~ ~ ~ {NoAI:1b,Silent:1b,PersistenceRequired:1b,Tags:[\"vultrum_bench\"]}",
+          "u": [
+            -12,
+            12,
+            6
+          ],
+          "v": [
+            22,
+            22,
+            1
+          ]
+        },
+        {
+          "command": "execute positioned {x} {y} {z} rotated {yaw} 0 positioned ^{u} ^ ^{v} positioned over motion_blocking run summon minecraft:villager ~ ~ ~ {NoAI:1b,Silent:1b,PersistenceRequired:1b,Tags:[\"vultrum_bench\"]}",
+          "u": [
+            -12,
+            12,
+            6
+          ],
+          "v": [
+            25,
+            25,
+            1
+          ]
+        },
+        {
+          "command": "execute positioned {x} {y} {z} rotated {yaw} 0 positioned ^{u} ^ ^{v} positioned over motion_blocking run summon minecraft:wither_skeleton ~ ~ ~ {NoAI:1b,Silent:1b,PersistenceRequired:1b,Tags:[\"vultrum_bench\"]}",
+          "u": [
+            -12,
+            12,
+            6
+          ],
+          "v": [
+            28,
+            28,
+            1
+          ]
+        },
+        {
+          "command": "execute positioned {x} {y} {z} rotated {yaw} 0 positioned ^{u} ^ ^{v} positioned over motion_blocking run summon minecraft:armor_stand ~ ~ ~ {NoAI:1b,Silent:1b,PersistenceRequired:1b,Tags:[\"vultrum_bench\"],ShowArms:1b}",
+          "u": [
+            -12,
+            12,
+            6
+          ],
+          "v": [
+            31,
+            31,
+            1
+          ]
+        },
+        {
+          "command": "execute positioned {x} {y} {z} rotated {yaw} 0 positioned ^{u} ^ ^{v} positioned over motion_blocking run summon minecraft:chicken ~ ~ ~ {NoAI:1b,Silent:1b,PersistenceRequired:1b,Tags:[\"vultrum_bench\"]}",
+          "u": [
+            -12,
+            12,
+            6
+          ],
+          "v": [
+            34,
+            34,
+            1
+          ]
+        },
+        {
+          "command": "execute positioned {x} {y} {z} rotated {yaw} 0 positioned ^{u} ^ ^{v} positioned over motion_blocking run summon minecraft:horse ~ ~ ~ {NoAI:1b,Silent:1b,PersistenceRequired:1b,Tags:[\"vultrum_bench\"]}",
+          "u": [
+            -12,
+            12,
+            6
+          ],
+          "v": [
+            37,
+            37,
+            1
+          ]
+        }
+      ],
+      "cleanup": [
+        "kill @e[tag=vultrum_bench]",
+        "kill @e[type=minecraft:item]",
+        "execute positioned {x} {y} {z} rotated {yaw} 0 run fill ^-12 ^1 ^3 ^12 ^1 ^3 minecraft:air replace minecraft:chest",
+        "execute positioned {x} {y} {z} rotated {yaw} 0 run setblock ^-1 ^1 ^6 minecraft:air",
+        "execute positioned {x} {y} {z} rotated {yaw} 0 run setblock ^1 ^1 ^6 minecraft:air"
+      ]
+    },
+    {
+      "name": "plains-fly",
+      "locate": "biome minecraft:plains",
+      "aboveGround": 30,
+      "yaw": 180,
+      "pitch": 10,
+      "fly": {
+        "speed": 30
+      }
+    }
+  ],
+  "settingsCheck": true
+}

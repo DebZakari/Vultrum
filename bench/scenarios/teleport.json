@@ -1,0 +1,44 @@
+{
+  "world": "vultrum-bench",
+  "seed": 20261008,
+  "fullscreen": true,
+  "warmupSeconds": 1,
+  "recordSeconds": 3,
+  "renderDistances": [
+    32
+  ],
+  "viewpoints": [
+    {
+      "name": "east",
+      "x": 4000,
+      "z": 0,
+      "aboveGround": 30,
+      "yaw": -90,
+      "pitch": 10
+    },
+    {
+      "name": "south",
+      "x": 0,
+      "z": 4000,
+      "aboveGround": 30,
+      "yaw": 0,
+      "pitch": 10
+    },
+    {
+      "name": "west",
+      "x": -4000,
+      "z": 0,
+      "aboveGround": 30,
+      "yaw": 90,
+      "pitch": 10
+    },
+    {
+      "name": "north",
+      "x": 0,
+      "z": -4000,
+      "aboveGround": 30,
+      "yaw": 180,
+      "pitch": 10
+    }
+  ]
+}

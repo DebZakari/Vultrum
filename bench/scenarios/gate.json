@@ -1,0 +1,15 @@
+{
+  "world": "vultrum-bench",
+  "seed": 20261008,
+  "fullscreen": true,
+  "warmupSeconds": 3,
+  "recordSeconds": 10,
+  "renderDistances": [8, 12, 16],
+  "viewpoints": [
+    { "name": "plains", "locate": "biome minecraft:plains", "aboveGround": 3, "yaw": 180, "pitch": 20 },
+    { "name": "village", "locate": "structure #minecraft:village", "aboveGround": 0, "yaw": 0, "pitch": 0 },
+    { "name": "jungle-hover", "locate": "biome minecraft:jungle", "aboveGround": 30, "yaw": -135, "pitch": 10 },
+    { "name": "dark-forest-hover", "locate": "biome minecraft:dark_forest", "aboveGround": 30, "yaw": 180, "pitch": 10 },
+    { "name": "mountains", "locate": "biome minecraft:jagged_peaks", "aboveGround": 2, "yaw": 135, "pitch": 0 }
+  ]
+}

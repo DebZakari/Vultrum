@@ -1,0 +1,11 @@
+{
+  "world": "vultrum-bench",
+  "seed": 20261008,
+  "fullscreen": false,
+  "warmupSeconds": 1,
+  "recordSeconds": 2,
+  "renderDistances": [6, 10],
+  "viewpoints": [
+    { "name": "ground-north", "x": 0, "z": 0, "aboveGround": 0, "yaw": 180, "pitch": 0 }
+  ]
+}

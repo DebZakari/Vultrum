@@ -1,0 +1,36 @@
+{
+  "world": "vultrum-visual",
+  "seed": 20261008,
+  "fullscreen": true,
+  "warmupSeconds": 2,
+  "recordSeconds": 1,
+  "renderDistances": [8, 16, 32],
+  "visualCheck": true,
+  "viewpoints": [
+    { "name": "cave-dawn", "x": 0, "z": 0, "y": -40, "yaw": 90, "pitch": 15, "time": 1000,
+      "setup": [
+        { "command": "execute positioned {x} {y} {z} run fill ~-10 ~-2 ~-10 ~10 ~6 ~10 minecraft:air" },
+        { "command": "execute positioned {x} {y} {z} run setblock ~-9 ~-3 ~-9 minecraft:glowstone" },
+        { "command": "execute positioned {x} {y} {z} run setblock ~9 ~-3 ~9 minecraft:glowstone" }
+      ] },
+    { "name": "cave-morning", "x": 0, "z": 0, "y": -40, "yaw": 90, "pitch": 15, "time": 3000 },
+    { "name": "cave-noon", "x": 0, "z": 0, "y": -40, "yaw": 90, "pitch": 15, "time": 6000 },
+    { "name": "cave-dusk", "x": 0, "z": 0, "y": -40, "yaw": -90, "pitch": 15, "time": 11000 },
+    { "name": "cave-moon", "x": 0, "z": 0, "y": -40, "yaw": 90, "pitch": 15, "time": 14500 },
+    { "name": "ancient-city-dawn", "locate": "structure minecraft:ancient_city", "x": 0, "z": 0, "y": -40, "yaw": 90, "pitch": 20,
+      "time": 1000,
+      "setup": [ { "command": "execute positioned {x} {y} {z} run fill ~-3 ~-1 ~-3 ~3 ~3 ~3 minecraft:air" } ] },
+    { "name": "peak-cave-dawn", "locate": "biome minecraft:jagged_peaks", "x": 0, "z": 0, "y": 120, "yaw": 90, "pitch": 15, "time": 1000,
+      "setup": [
+        { "command": "execute positioned {x} {y} {z} run fill ~-8 ~-2 ~-8 ~8 ~5 ~8 minecraft:air" },
+        { "command": "execute positioned {x} {y} {z} run setblock ~-7 ~-3 ~-7 minecraft:glowstone" }
+      ] },
+    { "name": "surface-dawn", "x": 0, "z": 0, "aboveGround": 2, "yaw": 90, "pitch": 15, "time": 1000 },
+    { "name": "surface-noon", "x": 0, "z": 0, "aboveGround": 30, "yaw": 135, "pitch": 45, "time": 6000 },
+    { "name": "peaks-dusk", "locate": "biome minecraft:jagged_peaks", "x": 0, "z": 0, "aboveGround": 3, "yaw": -90, "pitch": 10,
+      "time": 11500 },
+    { "name": "dark-forest-morning", "locate": "biome minecraft:dark_forest", "x": 0, "z": 0, "aboveGround": 0, "ignoreLeaves": true,
+      "yaw": 90, "pitch": 0, "time": 2000 },
+    { "name": "ocean-floor", "locate": "biome minecraft:deep_ocean", "x": 0, "z": 0, "y": 45, "yaw": 90, "pitch": 30, "time": 4000 }
+  ]
+}

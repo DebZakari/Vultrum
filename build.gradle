@@ -1,0 +1,128 @@
+plugins {
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+}
+
+// The release version, then the game it's built for as semver build metadata, as Sodium and Vitrail do.
+version = "${project.mod_version}+mc${project.minecraft_version}"
+group = project.maven_group
+
+repositories {
+    mavenCentral()
+    exclusiveContent {
+        forRepository { maven { name = 'Modrinth'; url = 'https://api.modrinth.com/maven' } }
+        filter { includeGroup 'maven.modrinth' }
+    }
+}
+
+// The JVM flags of the Prism instance the game is played in, so dev runs and benchmarks see the same GC and heap.
+def gameJvmArgs = ['-Xms8G', '-Xmx8G', '-XX:+UseZGC', '-XX:+AlwaysPreTouch', '-XX:-ZUncommit',
+                   '-XX:+DisableExplicitGC', '-XX:+UseCompactObjectHeaders', '-XX:ReservedCodeCacheSize=400M']
+// A Flight Recorder recording of the whole run: GC, safepoints, lock waits and samples, to place a hitch.
+if (project.hasProperty('bench.jfr'))
+    gameJvmArgs += "-XX:StartFlightRecording=filename=${project.property('bench.jfr')},settings=profile".toString()
+
+// Benchmark runs pass -Pbench=<scenario.json> -Pbench.out=<dir> [-Pbench.label=<name>] [-Pbench.stats=true]
+// [-Pbench.jfr=<file>] (see tools/bench.ps1).
+def benchProperties = ['bench': 'vultrum.bench', 'bench.out': 'vultrum.bench.out', 'bench.label': 'vultrum.bench.label',
+                       'bench.stats': 'vultrum.bench.stats']
+
+loom {
+    runs {
+        // On every run config, not through inherit: inherit passes client's JVM args only as a convention, which the
+        // first add replaces. Loom's own -Dfabric.dli flags dropped them, and shader runs before 2026-10-09 19:20 ran
+        // G1 with the default heap.
+        configureEach { vmArgs(gameJvmArgs) }
+        client {
+            benchProperties.each { gradleName, systemName ->
+                if (project.hasProperty(gradleName)) property(systemName, project.property(gradleName).toString())
+            }
+        }
+        // Same mods plus whatever is placed in run-shaders/mods (Vitrail) and run-shaders/shaderpacks.
+        clientShaders {
+            inherit client
+            configName = 'Minecraft Client (shaders)'
+            runDir 'run-shaders'
+            // Vitrail logs a per-render-pass GPU time breakdown (shadow, gbuffers, composites) every second.
+            property 'vitrail.passTimings', '1'
+        }
+        // The shaders setup plus a full mod set (run-full/mods), to check Vultrum against the mix it's played with.
+        clientFull {
+            inherit client
+            configName = 'Minecraft Client (full mod set)'
+            runDir 'run-full'
+            property 'vitrail.passTimings', '1'
+        }
+        // A mod-compatibility set: run-compat, or the run-compat-* dir named by -Pcompat.dir (see tools/bench.ps1 -Compat).
+        clientCompat {
+            inherit client
+            configName = 'Minecraft Client (compatibility set)'
+            runDir project.findProperty('compat.dir') ?: 'run-compat'
+        }
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+
+    compileOnly "maven.modrinth:sodium:${project.sodium_version}"
+    localRuntime "maven.modrinth:sodium:${project.sodium_version}"
+    localRuntime "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+    testImplementation "maven.modrinth:sodium:${project.sodium_version}"
+    testImplementation platform('org.junit:junit-bom:5.13.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('fabric.mod.json') { expand version: project.version }
+}
+
+// The LGPL and the GPL it builds on travel with the jar, named so they don't clash with other mods' files.
+jar {
+    from('LICENSE') { rename { 'LICENSE_vultrum' } }
+    from('GPL-3.0.txt') { rename { 'GPL-3.0_vultrum.txt' } }
+}
+
+// Vultrum's compute pipelines ship as SPIR-V, compiled from src/main/glsl with the shaderc Minecraft uses.
+configurations { shaderc }
+dependencies {
+    ['lwjgl', 'lwjgl-shaderc'].each {
+        shaderc "org.lwjgl:$it:3.4.3"
+        shaderc "org.lwjgl:$it:3.4.3:natives-windows"
+    }
+}
+def compileShaders = tasks.register('compileShaders', Exec) {
+    def sources = file('src/main/glsl')
+    def compiler = file('tools/ShaderCompiler.java')
+    def spirv = layout.buildDirectory.dir('generated/spirv')
+    def classpath = configurations.shaderc
+    inputs.dir sources
+    inputs.file compiler
+    inputs.files classpath
+    outputs.dir spirv
+    executable "${System.getProperty('java.home')}/bin/java"
+    args '--enable-native-access=ALL-UNNAMED', '--sun-misc-unsafe-memory-access=allow'
+    argumentProviders.add({ ['-cp', classpath.asPath, compiler.path, sources.path,
+                             spirv.get().dir('assets/vultrum/shaders').asFile.path] } as CommandLineArgumentProvider)
+}
+sourceSets.main.resources.srcDir(compileShaders)
+
+tasks.withType(JavaCompile).configureEach { options.release = 25 }
+java {
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+    withSourcesJar()
+}
+test {
+    useJUnitPlatform()
+    // Minecraft's log4j config on the test classpath writes logs/ into the working directory.
+    workingDir = layout.buildDirectory.dir('test-run').get().asFile
+    // CullFrameTest checks the frame header against the shaders' Frame blocks.
+    systemProperty 'vultrum.glsl', file('src/main/glsl').absolutePath
+    // ScenarioTest loads every shipped scenario.
+    systemProperty 'vultrum.scenarios', file('bench/scenarios').absolutePath
+    doFirst { workingDir.mkdirs() }
+}

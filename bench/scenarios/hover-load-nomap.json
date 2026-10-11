@@ -1,0 +1,42 @@
+{
+  "world": "vultrum-bench-nomap",
+  "seed": 20261008,
+  "fullscreen": true,
+  "warmupSeconds": 3,
+  "recordSeconds": 20,
+  "renderDistances": [
+    32
+  ],
+  "viewpoints": [
+    {
+      "name": "jungle-hover",
+      "locate": "biome minecraft:jungle",
+      "aboveGround": 30,
+      "yaw": -135,
+      "pitch": 10
+    },
+    {
+      "name": "dark-forest-hover",
+      "locate": "biome minecraft:dark_forest",
+      "aboveGround": 30,
+      "yaw": 180,
+      "pitch": 10
+    },
+    {
+      "name": "east",
+      "x": 4000,
+      "z": 0,
+      "aboveGround": 30,
+      "yaw": -90,
+      "pitch": 10
+    },
+    {
+      "name": "west",
+      "x": -4000,
+      "z": 0,
+      "aboveGround": 30,
+      "yaw": 90,
+      "pitch": 10
+    }
+  ]
+}
