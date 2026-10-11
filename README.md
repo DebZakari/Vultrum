@@ -103,7 +103,7 @@ You need a Fabric instance for Minecraft 26.3 on Java 25, with these mods:
 
 Fabric Loader 0.19.5 or later.
 
-<a id="vitrail"></a>For shader packs you can use Vitrail from Modrinth, or [Vultrum's build of Vitrail](https://github.com/DebZakari/vitrail-shaders/releases/tag/0.12.0-beta.vultrum.1). It's the build Vultrum is tested with: Vitrail 0.12.0-beta, plus a fix for the block-breaking cracks that 26.3 hides under a shader pack, and faster drawing of mobs and chests. It replaces Vitrail in your `mods` folder. If something goes wrong with it, report it on [Vultrum's issues](https://github.com/DebZakari/Vultrum/issues), not Vitrail's.
+<a id="vitrail"></a>For shader packs you can use Vitrail from Modrinth, or [Vultrum's build of Vitrail](https://github.com/DebZakari/vitrail-shaders/releases/tag/0.12.0-beta.vultrum.2). It's the build Vultrum is tested with: Vitrail 0.12.0-beta, plus a fix for the block-breaking cracks that 26.3 hides under a shader pack, and faster drawing of mobs and chests. It replaces Vitrail in your `mods` folder. If something goes wrong with it, report it on [Vultrum's issues](https://github.com/DebZakari/Vultrum/issues), not Vitrail's.
 
 What changed in each version is in the [changelog](CHANGELOG.md).
 
