@@ -11,6 +11,7 @@
 
 <p align="center">
   <a href="https://github.com/DebZakari/Vultrum/releases">Download</a> ·
+  <a href="CHANGELOG.md">Changelog</a> ·
   <a href="#install">Install</a> ·
   <a href="#settings">Settings</a> ·
   <a href="#compatibility">Compatibility</a> ·
@@ -52,7 +53,7 @@ How much you gain depends on how much of the view is hidden. In a dark forest mo
 
 While flying at 32 chunks, the slowest 1% of frames got 15 to 36% faster, and the longest frame in the jungle went from 18.9 ms to 11.3 ms. At 16 chunks the difference was within the noise between runs.
 
-Vitrail in these runs was a development build with a few speedups that aren't released yet, so FPS with the Vitrail you get from Modrinth will be somewhat lower overall.
+Vitrail in these runs was [Vultrum's build of Vitrail](#vitrail), which has a few speedups that Vitrail's own release doesn't have yet. With Vitrail from Modrinth, FPS will be somewhat lower overall.
 
 <details>
 <summary>All numbers</summary>
@@ -99,6 +100,10 @@ You need a Fabric instance for Minecraft 26.3 on Java 25, with these mods:
 | Vultrum | 0.1.0-alpha.1 | from [Releases](https://github.com/DebZakari/Vultrum/releases) |
 
 Fabric Loader 0.19.5 or later.
+
+<a id="vitrail"></a>For shader packs you can use Vitrail from Modrinth, or [Vultrum's build of Vitrail](https://github.com/DebZakari/vitrail-shaders/releases/tag/0.12.0-beta.vultrum.1). It's the build Vultrum is tested with: Vitrail 0.12.0-beta, plus a fix for the block-breaking cracks that 26.3 hides under a shader pack, and faster drawing of mobs and chests. It replaces Vitrail in your `mods` folder. If something goes wrong with it, report it on [Vultrum's issues](https://github.com/DebZakari/Vultrum/issues), not Vitrail's.
+
+What changed in each version is in the [changelog](CHANGELOG.md).
 
 Then switch the game to Vulkan: **Options → Video Settings → Graphics API → Prefer Vulkan (Experimental)**, and restart. The game's default is OpenGL. Vultrum's loading fixes still work there, but its culling doesn't.
 
