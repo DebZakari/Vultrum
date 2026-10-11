@@ -8,7 +8,7 @@ package dev.vultrum.cull;
  * <p>The build runs in two dispatches at common resolutions: mode 0 builds levels 0 to {@link #TILE_LEVELS} - 1,
  * one workgroup per {@link #TILE}² level-0 texels, and mode 2 builds the rest in one workgroup once a level fits in
  * {@link #TAIL_TEXELS}. Levels between the two (none up to 4K) get a mode-1 dispatch each. All three modes run
- * {@link #GROUP}-thread workgroups.
+ * {@link #GROUP}-thread workgroups, or 128 threads when the device's limit requires it.
  *
  * @param width0 level-0 width in texels
  * @param height0 level-0 height in texels

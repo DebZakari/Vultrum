@@ -1,6 +1,8 @@
 #version 460
+#ifndef PORTABLE_COUNTERS
 #extension GL_KHR_shader_subgroup_arithmetic : require
 #extension GL_KHR_shader_subgroup_basic : require
+#endif
 
 // One invocation per Sodium indirect command of the main view. Mode 0 (phase 1) draws the sections that
 // were visible last frame. Mode 1 (phase 2) tests every section against the Hi-Z of what phase 1 drew,
@@ -79,8 +81,23 @@ bool boxVisible(ivec3 section) {
     return false;
 }
 
+// Every lane, including inactive command slots, participates in the workgroup reduction.
+#ifdef PORTABLE_COUNTERS
+shared uvec4 sums[64];
+uvec4 sumCounts(uvec4 value) {
+    uint t = gl_LocalInvocationIndex;
+    sums[t] = value;
+    barrier();
+    for (uint step = 32u; step > 0u; step >>= 1u) {
+        if (t < step) sums[t] += sums[t + step];
+        barrier();
+    }
+    return sums[0];
+}
+#else
 // Adds value over the subgroup to a Stats member with one atomic.
 #define COUNT(member, value) { uint total = subgroupAdd(value); if (subgroupElect() && total != 0u) atomicAdd(member, total); }
+#endif
 
 void main() {
     uint i = gl_GlobalInvocationID.x;
@@ -92,8 +109,16 @@ void main() {
     if (push.mode == 0u) {
         draw = live && visibleFrame[s.w] == frame - 1u;
         if (live) words[c + 1u] = draw ? 1u : 0u;
+#ifdef PORTABLE_COUNTERS
+        uvec4 total = sumCounts(uvec4(draw ? 1u : 0u, draw ? listed : 0u, 0u, 0u));
+        if (gl_LocalInvocationIndex == 0u) {
+            atomicAdd(phase1Commands, total.x);
+            atomicAdd(phase1Triangles, total.y);
+        }
+#else
         COUNT(phase1Commands, draw ? 1u : 0u);
         COUNT(phase1Triangles, draw ? listed : 0u);
+#endif
         return;
     }
     if (live) {
@@ -103,8 +128,18 @@ void main() {
         draw = visible && !drawn;
         words[c + 1u] = draw ? 1u : 0u;
     }
+#ifdef PORTABLE_COUNTERS
+    uvec4 total = sumCounts(uvec4(live ? 1u : 0u, draw ? 1u : 0u, listed, draw ? listed : 0u));
+    if (gl_LocalInvocationIndex == 0u) {
+        atomicAdd(commands, total.x);
+        atomicAdd(phase2Commands, total.y);
+        atomicAdd(triangles, total.z);
+        atomicAdd(phase2Triangles, total.w);
+    }
+#else
     COUNT(commands, live ? 1u : 0u);
     COUNT(phase2Commands, draw ? 1u : 0u);
     COUNT(triangles, listed);
     COUNT(phase2Triangles, draw ? listed : 0u);
+#endif
 }

@@ -9,7 +9,11 @@
 // Mode 1: builds level `level` from the one below, for levels too big for mode 2 (none at 1080p or 4K).
 // Mode 2: one workgroup builds level `level` and every level above it.
 
-const uint GROUP = 256u; // HizLevels.GROUP: one thread per 4x4-pixel quarter of a tile's 8x8 level-0 texels
+#ifndef HIZ_GROUP_SIZE
+const uint GROUP = 256u; // HizLevels.GROUP: one thread per quarter tile
+#else
+const uint GROUP = HIZ_GROUP_SIZE;
+#endif
 layout(local_size_x = GROUP) in;
 
 layout(std430, binding = 0) readonly buffer Frame {
@@ -59,17 +63,21 @@ float fromBelow(uint level, uvec2 texel) {
 }
 
 // cells: 0-255 quarter blocks (4x4 pixels), 256-319 level 0, 320-335 level 1, 336-339 level 2.
+// Each invocation fills one quarter block with 256 threads, or two with 128, before the same reduction.
 void tile() {
     uint t = gl_LocalInvocationIndex;
     uvec2 base = gl_WorkGroupID.xy * 8u; // level-0 texel at the tile's corner
-    ivec2 origin = ivec2(base + uvec2((t >> 2u) & 7u, t >> 5u)) * BLOCK + ivec2(t & 1u, (t >> 1u) & 1u) * 4;
-    float farthest = 1.0;
-    for (int y = 0; y < 4; y++)
-        for (int x = 0; x < 4; x++) {
-            ivec2 p = origin + ivec2(x, y);
-            if (all(lessThan(p, ivec2(depthSize)))) farthest = min(farthest, texelFetch(mainDepth, p, 0).r);
-        }
-    cells[t] = farthest;
+    for (uint q = t; q < 256u; q += GROUP) {
+        ivec2 origin = ivec2(base + uvec2((q >> 2u) & 7u, q >> 5u)) * BLOCK + ivec2(q & 1u, (q >> 1u) & 1u) * 4;
+        float farthest = 1.0;
+        for (int y = 0; y < 4; y++)
+            for (int x = 0; x < 4; x++) {
+                ivec2 p = origin + ivec2(x, y);
+                if (all(lessThan(p, ivec2(depthSize)))) farthest = min(farthest, texelFetch(mainDepth, p, 0).r);
+            }
+        cells[q] = farthest;
+    }
+    float farthest;
     barrier();
     if (t < 64u) {
         farthest = min(min(cells[t * 4u], cells[t * 4u + 1u]), min(cells[t * 4u + 2u], cells[t * 4u + 3u]));

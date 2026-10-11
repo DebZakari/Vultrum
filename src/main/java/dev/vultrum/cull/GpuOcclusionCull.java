@@ -53,6 +53,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.LongBuffer;
 import java.nio.file.Path;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -102,6 +103,7 @@ public final class GpuOcclusionCull {
     private static int[] sections = new int[4096 * 4];
 
     private static long setLayout, pipelineLayout, cullPipeline, hizPipeline;
+    private static ComputePath computePath;
     private static GpuBuffer frameData, visibility, hiz, counters;
     private static final GpuBuffer[] readback = new GpuBuffer[READBACK_SLOTS];
     private static final long[] readbackSubmit = new long[READBACK_SLOTS]; // 0: free
@@ -210,8 +212,10 @@ public final class GpuOcclusionCull {
             return stop("main depth is not a Vulkan texture view");
         int width = depth.texture().getWidth(0), height = depth.texture().getHeight(0);
         var pyramid = HizLevels.of(width, height);
-        if (cullPipeline == 0 && !computeSupported(vulkan))
-            return stop("compute shaders lack subgroup arithmetic or " + HizLevels.GROUP + "-wide workgroups");
+        if (cullPipeline == 0) {
+            computePath = computePath(vulkan);
+            if (computePath == null) return stop("compute shaders lack " + ComputePath.MIN_GROUP + "-wide workgroups");
+        }
         ensurePipelines(vulkan);
         ensureBuffers(device, pyramid.texels());
         if (!pinned) frame++;
@@ -281,7 +285,7 @@ public final class GpuOcclusionCull {
             for (int level = HizLevels.TILE_LEVELS; level < tail; level++) {
                 hizBarrier(commands, stack);
                 pushMode(commands, stack, 1, level);
-                vkCmdDispatch(commands, (int) Math.ceilDiv(pyramid.levelTexels(level), HizLevels.GROUP), 1, 1);
+                vkCmdDispatch(commands, (int) Math.ceilDiv(pyramid.levelTexels(level), computePath.hizGroup()), 1, 1);
             }
             if (tail < pyramid.levels()) {
                 hizBarrier(commands, stack);
@@ -350,15 +354,24 @@ public final class GpuOcclusionCull {
         }
     }
 
-    private static boolean computeSupported(VulkanDevice vulkan) {
+    private static ComputePath computePath(VulkanDevice vulkan) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             var subgroup = VkPhysicalDeviceSubgroupProperties.calloc(stack).sType$Default();
             var properties = VkPhysicalDeviceProperties2.calloc(stack).sType$Default().pNext(subgroup);
             vkGetPhysicalDeviceProperties2(vulkan.vkDevice().getPhysicalDevice(), properties);
             int needed = VK_SUBGROUP_FEATURE_BASIC_BIT | VK_SUBGROUP_FEATURE_ARITHMETIC_BIT;
             var limits = properties.properties().limits();
-            return (subgroup.supportedStages() & VK_SHADER_STAGE_COMPUTE_BIT) != 0 && (subgroup.supportedOperations() & needed) == needed
-                    && limits.maxComputeWorkGroupInvocations() >= HizLevels.GROUP && limits.maxComputeWorkGroupSize(0) >= HizLevels.GROUP;
+            boolean arithmetic = (subgroup.supportedStages() & VK_SHADER_STAGE_COMPUTE_BIT) != 0
+                    && (subgroup.supportedOperations() & needed) == needed;
+            int invocations = limits.maxComputeWorkGroupInvocations(), sizeX = limits.maxComputeWorkGroupSize(0);
+            // Benchmark only: exercise both fallback variants on a device that normally takes the fast path.
+            if (System.getProperty("vultrum.bench") != null && Files.exists(
+                    FabricLoader.getInstance().getGameDir().resolve("vultrum/portable-compute"))) {
+                arithmetic = false;
+                invocations = Math.min(invocations, ComputePath.MIN_GROUP);
+                sizeX = Math.min(sizeX, ComputePath.MIN_GROUP);
+            }
+            return ComputePath.choose(invocations, sizeX, arithmetic);
         }
     }
 
@@ -439,8 +452,10 @@ public final class GpuOcclusionCull {
             check(vkCreatePipelineLayout(device, VkPipelineLayoutCreateInfo.calloc(stack).sType$Default()
                     .pSetLayouts(stack.longs(setLayout)).pPushConstantRanges(push), null, handle), "pipeline layout");
             pipelineLayout = handle.get(0);
-            hizPipeline = pipeline(device, stack, "occlusion_hiz");
-            cullPipeline = pipeline(device, stack, "occlusion_cull");
+            hizPipeline = pipeline(device, stack, computePath.hizShader());
+            cullPipeline = pipeline(device, stack, computePath.cullShader());
+            VultrumClient.LOGGER.info("Occlusion compute: {} counters, {}-thread Hi-Z",
+                    computePath.subgroupCounters() ? "subgroup" : "shared-memory", computePath.hizGroup());
         }
     }
 
@@ -497,6 +512,8 @@ public final class GpuOcclusionCull {
         var stats = new LinkedHashMap<String, Object>();
         stats.put("frames", statFrames);
         stats.put("broken", broken);
+        stats.put("subgroupCounters", computePath == null ? null : computePath.subgroupCounters());
+        stats.put("hizWorkgroup", computePath == null ? null : computePath.hizGroup());
         stats.put("culledFramePct", statPrepares == 0 ? 0 : Math.round(1000.0 * statCulls / statPrepares) / 10.0);
         stats.put("gateOn", gate.on());
         stats.put("commands", mean(totals.commands()));
