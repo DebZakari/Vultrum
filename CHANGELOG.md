@@ -2,6 +2,10 @@
 
 What each release changed, for players. Newest first. Downloads are on [GitHub](https://github.com/DebZakari/Vultrum/releases) and Modrinth.
 
+## Unreleased
+
+- GPU Occlusion Culling now adapts automatically to GPUs with lower compute limits instead of switching off. The fallback was checked on the RTX 3090; AMD and Intel GPUs remain untested.
+
 ## 0.1.0-alpha.1 (2026-10-12)
 
 First public release, for Minecraft 26.3 on Fabric. Tested on one PC (Windows 11, RTX 3090), so please report anything odd with your GPU.

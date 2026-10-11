@@ -37,6 +37,8 @@ Minecraft 26.3 can draw with Vulkan instead of OpenGL. Vultrum adds two things o
 
 Everything is on by default and can be turned off in Sodium's video settings.
 
+Inspired by [Nvidium](https://github.com/MCRcortex/nvidium) and [Vercidium's voxel optimisation work](https://vercidium.com/blog/voxel-world-optimisations/).
+
 ## Performance
 
 <picture>
@@ -133,6 +135,8 @@ Vultrum adds two pages to Sodium's video settings, **Culling** and **Loading**. 
 ## Compatibility
 
 Vultrum is client-side. It works in singleplayer and on servers, and the server doesn't need it.
+
+The development version automatically adapts GPU occlusion culling to the GPU's compute limits, including devices without subgroup arithmetic or with 128-thread workgroups. This is not in 0.1.0-alpha.1. Both compute paths have been checked on the RTX 3090; AMD and Intel hardware remain untested.
 
 Tested on Vulkan together with Vitrail and Complementary Unbound, all in one instance, with no errors from Vultrum:
 
