@@ -14,6 +14,9 @@ from pathlib import Path
 from gpu_log import gpu_telemetry
 from vitrail_log import SHADOW_TERRAIN, TERRAIN, pass_timings
 
+# A conservative back-to-back/interleaved session policy, including launcher time.
+MAX_IDLE_SECONDS = 15 * 60
+
 
 def get(value, path):
     for key in path:
@@ -94,6 +97,7 @@ class Run:
         identity.update(properties=properties, jvmFlags=sorted(flags) if args is not None else None,
                         settings=self.settings, sodiumOptions=self.sodium_options, savedOptions=self.options)
         identity["meta"] = {key: (self.meta or {}).get(key) for key in ("git", "mods", "shaders", "full", "compat")}
+        identity["shaderFixture"] = get(self.meta or {}, ("shaderFixture", "before"))
         identity["cases"] = {key: {field: case.get(field) for field in ("position", "loadedChunks", "visibleSections")}
                              for key, case in self.cases.items()}
         return identity
@@ -111,6 +115,15 @@ class Run:
             reasons.append("Stats/JFR instrumentation enabled or unknown")
         if meta.get("diagnosticOnly") or meta.get("profiler"):
             reasons.append("diagnostic/profiler capture")
+        if meta.get("shaders") or any(name in ("vitrail", "iris") for name in result.get("mods", {})):
+            fixture = meta.get("shaderFixture") or {}
+            before, after = fixture.get("before"), fixture.get("after")
+            if (fixture.get("version") != 1 or not isinstance(before, dict)
+                    or not isinstance(before.get("vitrail"), dict) or not isinstance(before.get("shaderpacks"), dict)
+                    or not {"pack.txt", "options.txt", "amortise-shadow", "graphics-api.txt",
+                            "box-shadow-cull", "soft-shadow-compare"}.issubset(before["vitrail"])
+                    or before != after):
+                reasons.append("shader fixture missing/invalid or changed during run")
         if any(arg.startswith("-XX:StartFlightRecording") for arg in result.get("jvmArgs") or []):
             reasons.append("JFR recording argument")
         if any(arg in ("-Dvultrum.bench.stats=true", "-Dvitrail.shaderDebugInfo=true")
@@ -151,7 +164,7 @@ class Run:
             for key in ("position", "loadedChunks", "visibleSections"):
                 if case.get(key) is None:
                     reasons.append(prefix + f"missing identity: {key}")
-            if "unfocused" not in case:
+            if type(case.get("unfocused")) is not bool:
                 reasons.append(prefix + "focus state unknown")
             elif case["unfocused"] and not (allow_uncapped_unfocused and self._uncapped_background()):
                 reasons.append(prefix + "unfocused without verified uncapped-background policy")
@@ -202,8 +215,24 @@ def assess(control, candidate, *, expected=None, allow_uncapped_unfocused=False)
         raise ValueError("expected differences require exact [control, candidate] pairs")
     reasons = [f"{run.path.name}: {reason}" for run in (control, candidate)
                for reason in run.exclusions(allow_uncapped_unfocused)]
+    if control.path.resolve() != candidate.path.resolve():
+        try:
+            earlier, later = sorted((_times(control), _times(candidate)))
+            gap = (later[0] - earlier[1]).total_seconds()
+            if gap < 0:
+                reasons.append("comparison runs overlap")
+            elif gap > MAX_IDLE_SECONDS:
+                reasons.append("comparison idle gap exceeds 15-minute session policy")
+        except (KeyError, ValueError, TypeError):
+            reasons.append("comparison timestamps missing/invalid")
     changes = []
-    for path, before, after in _differences(control.identity(), candidate.identity()):
+    control_identity, candidate_identity = control.identity(), candidate.identity()
+    actual = {key: [before, after] for key, before, after in _differences(control_identity, candidate_identity)}
+    for path, pair in expected.items():
+        # Property/filename keys may contain dots; compare the paths emitted by _differences.
+        if actual.get(path) != list(pair):
+            reasons.append("declared difference absent or incorrect: " + path)
+    for path, before, after in _differences(control_identity, candidate_identity):
         message = f"{path}: {before!r} -> {after!r}"
         if path in expected and list(expected[path]) == [before, after]:
             changes.append(message)
@@ -236,7 +265,7 @@ def score_brackets(brackets, metric, *, lower_is_better, gate, expected=None, al
     from visual, lifetime, regression and memory acceptance of an experiment.
     Repeated cases in one run cannot count as independent run pairs.
     """
-    rows, exclusions, candidates = [], [], set()
+    rows, exclusions, candidates, session_runs = [], [], set(), {}
     for bracket in brackets:
         if len(bracket) != 3 or any(run is None for run in bracket):
             exclusions.append("missing bracketing control/candidate")
@@ -247,6 +276,7 @@ def score_brackets(brackets, metric, *, lower_is_better, gate, expected=None, al
             exclusions.append("reused candidate or non-distinct bracketing runs")
             continue
         candidates.add(paths[1])
+        session_runs.update(zip(paths, bracket))
         try:
             times = [_times(run) for run in bracket]
             if times[0][1] > times[1][0] or times[1][1] > times[2][0]:
@@ -274,6 +304,13 @@ def score_brackets(brackets, metric, *, lower_is_better, gate, expected=None, al
                      "improvement": improvement, "improvementPct": percent,
                      "meetsPairGate": improvement >= gate.minimum_absolute and percent >= gate.minimum_percent
                      and improvement > drift})
+    try:
+        session_times = sorted(_times(run) for run in session_runs.values())
+        if any((later[0] - earlier[1]).total_seconds() > MAX_IDLE_SECONDS
+               for earlier, later in zip(session_times, session_times[1:])):
+            exclusions.append("series idle gap exceeds 15-minute session policy")
+    except (KeyError, ValueError, TypeError):
+        exclusions.append("series timestamps missing/invalid")
     if len(rows) < gate.required_pairs:
         exclusions.append(f"only {len(rows)} independent pairs; {gate.required_pairs} required")
     return {"eligible": not exclusions, "exclusions": list(dict.fromkeys(exclusions)), "pairs": rows,

@@ -82,6 +82,8 @@ $packFile = Join-Path $root (Join-Path $runDir 'vitrail\pack.txt')
 # Assigned directly: the output of an if statement would unroll the byte array.
 $packBytes = $null
 if (Test-Path -LiteralPath $packFile) { $packBytes = [IO.File]::ReadAllBytes($packFile) }
+. (Join-Path $PSScriptRoot 'bench-fixture.ps1')
+$shaderFixtureBefore = Get-BenchmarkShaderFixture (Join-Path $root $runDir)
 $started = Get-Date
 try {
     & .\gradlew.bat @gradleArgs
@@ -92,6 +94,7 @@ try {
     elseif (Test-Path -LiteralPath $packFile) { Remove-Item -LiteralPath $packFile }
 }
 
+$finished = Get-Date
 foreach ($file in @('options.txt', 'config\sodium-options.json', 'config\vultrum.properties', 'logs\latest.log')) {
     $source = Join-Path $runDir $file
     if (Test-Path -LiteralPath $source) { Copy-Item -LiteralPath $source -Destination (Join-Path $out (Split-Path $file -Leaf)) }
@@ -108,8 +111,9 @@ if (Test-Path -LiteralPath $modsDir) {
 }
 $meta = [ordered]@{
     label = $Label; scenario = $Scenario; shaders = [bool]$Shaders; full = [bool]$Full; compat = $Compat; stats = [bool]$Stats; jfr = [bool]$Jfr; git = $sha; dirty = $dirty
-    started = $started.ToString('o'); finished = (Get-Date).ToString('o'); gradleExitCode = $exitCode; mods = $mods
-} | ConvertTo-Json
+    started = $started.ToString('o'); finished = $finished.ToString('o'); gradleExitCode = $exitCode; mods = $mods
+    shaderFixture = [ordered]@{ version = 1; before = $shaderFixtureBefore; after = (Get-BenchmarkShaderFixture (Join-Path $root $runDir)) }
+} | ConvertTo-Json -Depth 10
 # Windows PowerShell's -Encoding UTF8 writes a byte order mark, which breaks Python's json.load.
 [IO.File]::WriteAllText((Join-Path $out 'meta.json'), $meta, (New-Object Text.UTF8Encoding $false))
 

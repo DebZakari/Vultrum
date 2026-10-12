@@ -5,6 +5,8 @@ from datetime import datetime, timedelta, timezone
 import io
 import json
 from pathlib import Path
+import shutil
+import subprocess
 import tempfile
 import unittest
 
@@ -28,6 +30,11 @@ class EvidenceTest(unittest.TestCase):
         meta = {"git": "abc123", "dirty": False, "gradleExitCode": 0, "stats": False, "jfr": False,
                 "mods": {"shader.jar": "123456"}, "shaders": True, "full": False, "compat": "run-compat-test",
                 "started": start.isoformat(), "finished": (start + timedelta(seconds=30)).isoformat()}
+        fixture = {"vitrail": {"pack.txt": "pack-config-hash", "options.txt": None,
+                              "amortise-shadow": None, "graphics-api.txt": None,
+                              "box-shadow-cull": None, "soft-shadow-compare": None},
+                   "shaderpacks": {"pack.zip": "pack-hash", "pack.zip.txt": "settings-hash"}}
+        meta["shaderFixture"] = {"version": 1, "before": fixture, "after": copy.deepcopy(fixture)}
         case = {"id": "view-rd32", "position": [0, 80, 0], "loadedChunks": 20, "visibleSections": 10,
                 "load": {"complete": True}, "terrainTimedOut": False, "moved": False, "focusLost": False,
                 "unfocused": False, "gpuDropped": 0, "gpuSpanOverflow": 0,
@@ -107,6 +114,58 @@ class EvidenceTest(unittest.TestCase):
         b.results["cases"][0]["moved"] = None
         self.assertFalse(assess(a, b).eligible)
 
+    def test_unknown_focus_is_excluded_even_when_both_runs_match(self):
+        for value in (None, 0, "false"):
+            a, b = self.run_file(), self.run_file()
+            a.cases["view-rd32"]["unfocused"] = b.cases["view-rd32"]["unfocused"] = value
+            self.assertFalse(assess(a, b, allow_uncapped_unfocused=True).eligible)
+
+    def test_declared_candidate_change_must_actually_exist(self):
+        report = assess(self.run_file(), self.run_file(), expected={"properties.experiment": (None, "true")})
+        self.assertFalse(report.eligible)
+        self.assertTrue(any("declared difference absent" in reason for reason in report.exclusions))
+
+    def test_shader_fixture_missing_changed_or_unstable_is_excluded(self):
+        for kind in ("missing", "pack", "settings", "during"):
+            a, b = self.run_file(), self.run_file()
+            if kind == "missing":
+                del a.meta["shaderFixture"]
+                del b.meta["shaderFixture"]
+            elif kind == "during":
+                b.meta["shaderFixture"]["after"]["vitrail"]["pack.txt"] = "changed"
+            else:
+                filename = "pack.zip" if kind == "pack" else "pack.zip.txt"
+                for phase in ("before", "after"):
+                    b.meta["shaderFixture"][phase]["shaderpacks"][filename] = "changed"
+            self.assertFalse(assess(a, b).eligible, kind)
+
+    def test_harness_snapshot_hashes_settings_directory_packs_and_missing_inputs(self):
+        shell = shutil.which("pwsh") or shutil.which("powershell")
+        if shell is None:
+            self.skipTest("PowerShell required for harness snapshot integration")
+        helper = Path(__file__).with_name("bench-fixture.ps1").resolve()
+        def snapshot():
+            command = ". '{}' ; Get-BenchmarkShaderFixture '{}' | ConvertTo-Json -Depth 10".format(
+                str(helper).replace("'", "''"), str(self.root).replace("'", "''"))
+            return json.loads(subprocess.run([shell, "-NoProfile", "-Command", command],
+                                            capture_output=True, text=True, check=True).stdout)
+        original = snapshot()
+        self.assertIsNone(original["vitrail"]["amortise-shadow"])
+        self.assertEqual(original["shaderpacks"], {})
+        pack = self.root / "shaderpacks/directory/shaders"
+        pack.mkdir(parents=True)
+        (pack / "terrain.fsh").write_text("first shader")
+        settings = self.root / "shaderpacks/directory.txt"
+        settings.write_text("QUALITY=HIGH")
+        first = snapshot()
+        self.assertIn("directory/shaders/terrain.fsh", first["shaderpacks"])
+        settings.write_text("QUALITY=LOW")
+        second = snapshot()
+        self.assertNotEqual(first["shaderpacks"]["directory.txt"], second["shaderpacks"]["directory.txt"])
+        (pack / "terrain.fsh").write_text("second shader")
+        self.assertNotEqual(second["shaderpacks"]["directory/shaders/terrain.fsh"],
+                            snapshot()["shaderpacks"]["directory/shaders/terrain.fsh"])
+
     def test_uncapped_unfocused_requires_verified_files_and_no_cap_mod(self):
         a, b = self.run_file(), self.run_file()
         a.results["cases"][0]["unfocused"] = b.results["cases"][0]["unfocused"] = True
@@ -181,6 +240,15 @@ class EvidenceTest(unittest.TestCase):
         bracket[1].meta["started"] = bracket[0].meta["started"]
         result = self.score([bracket])
         self.assertTrue(any("chronological" in reason for reason in result["exclusions"]))
+
+    def test_series_cannot_use_runs_hours_apart_or_separate_sessions(self):
+        brackets = [self.bracket((50, 30, 50)) for _ in range(3)]
+        for run in brackets[2]:
+            for key in ("started", "finished"):
+                run.meta[key] = (datetime.fromisoformat(run.meta[key]) + timedelta(days=1)).isoformat()
+        result = self.score(brackets)
+        self.assertFalse(result["eligible"])
+        self.assertTrue(any("idle gap" in reason for reason in result["exclusions"]))
 
     def test_higher_is_better_and_zero_controls_are_handled(self):
         brackets = [self.bracket((50, 70, 50)) for _ in range(3)]
