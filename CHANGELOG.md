@@ -2,6 +2,13 @@
 
 What each release changed, for players. Newest first. Downloads are on [GitHub](https://github.com/DebZakari/Vultrum/releases) and Modrinth.
 
+## 0.1.0-alpha.3 (2026-10-13)
+
+- Added **Spread Terrain Reloads** to the Loading page, enabled by default. It spreads already-loaded terrain registration across frames after F3+A or a render distance change, reducing reload freezes.
+- Terrain reappears over several frames during the reload. New chunk arrivals are handled immediately as before. The setting can be turned off and takes effect after a restart.
+
+On the RTX 3090, median peak frames during repeated reloads at 32 chunks fell by 27–47% across three comparisons, with a longer comparison confirming the improvement. Average FPS stayed essentially unchanged. Other GPUs remain untested.
+
 ## 0.1.0-alpha.2 (2026-10-12)
 
 - GPU Occlusion Culling now adapts automatically to GPUs with lower compute limits instead of switching off. The fallback was checked on the RTX 3090; AMD and Intel GPUs remain untested.
