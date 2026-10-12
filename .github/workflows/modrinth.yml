@@ -1,0 +1,43 @@
+name: Mirror release to Modrinth
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing GitHub release tag (for example v0.1.0-alpha.3)
+        required: true
+        type: string
+      dry_run:
+        description: Validate without uploading
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: modrinth-${{ inputs.tag || github.event.release.tag_name }}
+  cancel-in-progress: false
+
+jobs:
+  mirror:
+    if: github.repository == 'DebZakari/Vultrum' && vars.MODRINTH_PROJECT_ID != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Test publisher
+        run: python3 -m unittest discover -s tools -p 'test_publish_modrinth.py'
+      - name: Mirror the published jar
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          MODRINTH_PROJECT_ID: ${{ vars.MODRINTH_PROJECT_ID }}
+          RELEASE_TAG: ${{ inputs.tag || github.event.release.tag_name }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        run: python3 tools/publish_modrinth.py
