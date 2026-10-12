@@ -1,6 +1,9 @@
 package dev.vultrum.mixin;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
+import net.caffeinemc.mods.sodium.client.render.chunk.lists.ChunkRenderListIterable;
+import net.caffeinemc.mods.sodium.client.render.viewport.CameraTransform;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
@@ -15,8 +18,6 @@ import net.caffeinemc.mods.sodium.client.render.chunk.region.RenderRegion;
 import net.caffeinemc.mods.sodium.client.render.chunk.terrain.TerrainRenderPass;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(DefaultChunkRenderer.class)
 abstract class DefaultChunkRendererMixin {
@@ -42,9 +43,9 @@ abstract class DefaultChunkRendererMixin {
         if (GpuOcclusionCull.CULL) ((CullBatch) batch).vultrum$section(from, batch.size, x, y, z, region.getId(), index);
     }
 
-    @Inject(method = "prepare", at = @At("HEAD"))
-    private void vultrum$beginPrepare(CallbackInfo ci) {
-        GpuOcclusionCull.beginPrepare();
+    @WrapMethod(method = "prepare")
+    private void vultrum$prepare(ChunkRenderListIterable lists, CameraTransform camera, boolean cull, Operation<Void> original) {
+        GpuOcclusionCull.prepare(() -> original.call(lists, camera, cull));
     }
 
     @WrapOperation(method = "prepare", at = @At(value = "INVOKE",
@@ -55,8 +56,4 @@ abstract class DefaultChunkRendererMixin {
         GpuOcclusionCull.prepared(batch, pass, region, context);
     }
 
-    @Inject(method = "prepare", at = @At("RETURN"))
-    private void vultrum$endPrepare(CallbackInfo ci) {
-        GpuOcclusionCull.endPrepare();
-    }
 }

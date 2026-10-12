@@ -28,6 +28,7 @@ layout(std430, binding = 1) buffer Commands { uint words[]; };
 layout(std430, binding = 2) buffer Visibility { uint visibleFrame[]; };
 layout(std430, binding = 3) readonly buffer HiZ { float hiz[]; };
 // Per-frame totals, mirrored by CullCounters. commands and triangles: what phase 2 tested.
+layout(std430, binding = 5) buffer Phase1 { uint phase1Drawn[]; };
 layout(std430, binding = 4) buffer Stats {
     uint commands;
     uint phase1Commands;
@@ -106,8 +107,15 @@ void main() {
     uint c = (commandBase + i) * 5u;
     uint listed = live ? words[c] / 3u : 0u;
     bool draw = false;
+    // Recovery is independent of Hi-Z and of instance counts rewritten by phase 2.
+    if (push.mode >= 2u) {
+        if (i < commandCount && (live || push.mode == 3u))
+            words[c + 1u] = push.mode == 2u || (live && phase1Drawn[i] == 0u) ? 1u : 0u;
+        return;
+    }
     if (push.mode == 0u) {
         draw = live && visibleFrame[s.w] == frame - 1u;
+        if (i < commandCount) phase1Drawn[i] = live ? (draw ? 1u : 0u) : 1u;
         if (live) words[c + 1u] = draw ? 1u : 0u;
 #ifdef PORTABLE_COUNTERS
         uvec4 total = sumCounts(uvec4(draw ? 1u : 0u, draw ? listed : 0u, 0u, 0u));

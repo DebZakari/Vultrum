@@ -15,7 +15,6 @@ import org.spongepowered.asm.mixin.injection.At;
 abstract class DrawBackendMixin {
     @ModifyReturnValue(method = "chooseBackend", at = @At("RETURN"))
     private static DrawBackend vultrum$forceIndirect(DrawBackend chosen) {
-        return GpuOcclusionCull.CULL && chosen == DrawBackend.VK_MULTIDRAW
-                && RenderSystem.getDevice().getDeviceInfo().features().multiDrawIndirect() ? DrawBackend.VK_INDIRECT : chosen;
+        return GpuOcclusionCull.backend(chosen, RenderSystem.getDevice().getDeviceInfo().features().multiDrawIndirect());
     }
 }
