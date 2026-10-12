@@ -120,6 +120,7 @@ class Run:
             before, after = fixture.get("before"), fixture.get("after")
             if (fixture.get("version") != 1 or not isinstance(before, dict)
                     or not isinstance(before.get("vitrail"), dict) or not isinstance(before.get("shaderpacks"), dict)
+                    or "irisProperties" not in before
                     or not {"pack.txt", "options.txt", "amortise-shadow", "graphics-api.txt",
                             "box-shadow-cull", "soft-shadow-compare"}.issubset(before["vitrail"])
                     or before != after):
@@ -306,6 +307,8 @@ def score_brackets(brackets, metric, *, lower_is_better, gate, expected=None, al
                      and improvement > drift})
     try:
         session_times = sorted(_times(run) for run in session_runs.values())
+        if any(later[0] < earlier[1] for earlier, later in zip(session_times, session_times[1:])):
+            exclusions.append("series runs overlap")
         if any((later[0] - earlier[1]).total_seconds() > MAX_IDLE_SECONDS
                for earlier, later in zip(session_times, session_times[1:])):
             exclusions.append("series idle gap exceeds 15-minute session policy")

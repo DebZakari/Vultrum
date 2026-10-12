@@ -23,5 +23,9 @@ function Get-BenchmarkShaderFixture([string]$RunDirectory) {
                 (Get-FileHash -Algorithm SHA256 -LiteralPath $file.FullName).Hash.ToLower()
         }
     }
-    return [ordered]@{ vitrail = $vitrail; shaderpacks = $packs }
+    $iris = Join-Path $RunDirectory 'config\iris.properties'
+    $irisHash = if (Test-Path -LiteralPath $iris -PathType Leaf) {
+        (Get-FileHash -Algorithm SHA256 -LiteralPath $iris).Hash.ToLower()
+    } else { $null }
+    return [ordered]@{ vitrail = $vitrail; shaderpacks = $packs; irisProperties = $irisHash }
 }

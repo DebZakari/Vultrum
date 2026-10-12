@@ -33,7 +33,8 @@ class EvidenceTest(unittest.TestCase):
         fixture = {"vitrail": {"pack.txt": "pack-config-hash", "options.txt": None,
                               "amortise-shadow": None, "graphics-api.txt": None,
                               "box-shadow-cull": None, "soft-shadow-compare": None},
-                   "shaderpacks": {"pack.zip": "pack-hash", "pack.zip.txt": "settings-hash"}}
+                   "shaderpacks": {"pack.zip": "pack-hash", "pack.zip.txt": "settings-hash"},
+                   "irisProperties": None}
         meta["shaderFixture"] = {"version": 1, "before": fixture, "after": copy.deepcopy(fixture)}
         case = {"id": "view-rd32", "position": [0, 80, 0], "loadedChunks": 20, "visibleSections": 10,
                 "load": {"complete": True}, "terrainTimedOut": False, "moved": False, "focusLost": False,
@@ -151,6 +152,7 @@ class EvidenceTest(unittest.TestCase):
                                             capture_output=True, text=True, check=True).stdout)
         original = snapshot()
         self.assertIsNone(original["vitrail"]["amortise-shadow"])
+        self.assertIsNone(original["irisProperties"])
         self.assertEqual(original["shaderpacks"], {})
         pack = self.root / "shaderpacks/directory/shaders"
         pack.mkdir(parents=True)
@@ -165,6 +167,13 @@ class EvidenceTest(unittest.TestCase):
         (pack / "terrain.fsh").write_text("second shader")
         self.assertNotEqual(second["shaderpacks"]["directory/shaders/terrain.fsh"],
                             snapshot()["shaderpacks"]["directory/shaders/terrain.fsh"])
+        config = self.root / "config"
+        config.mkdir()
+        iris = config / "iris.properties"
+        iris.write_text("enableShaders=true")
+        on = snapshot()["irisProperties"]
+        iris.write_text("enableShaders=false")
+        self.assertNotEqual(on, snapshot()["irisProperties"])
 
     def test_uncapped_unfocused_requires_verified_files_and_no_cap_mod(self):
         a, b = self.run_file(), self.run_file()
@@ -249,6 +258,15 @@ class EvidenceTest(unittest.TestCase):
         result = self.score(brackets)
         self.assertFalse(result["eligible"])
         self.assertTrue(any("idle gap" in reason for reason in result["exclusions"]))
+
+    def test_individually_ordered_brackets_cannot_overlap_other_runs(self):
+        brackets = [self.bracket((50, 30, 50)) for _ in range(3)]
+        for run in brackets[1]:
+            for key in ("started", "finished"):
+                run.meta[key] = (datetime.fromisoformat(run.meta[key]) - timedelta(seconds=170)).isoformat()
+        report = self.score(brackets)
+        self.assertFalse(report["eligible"])
+        self.assertIn("series runs overlap", report["exclusions"])
 
     def test_higher_is_better_and_zero_controls_are_handled(self):
         brackets = [self.bracket((50, 70, 50)) for _ in range(3)]
