@@ -152,6 +152,7 @@ public final class FrameTimer {
     public static void beginFrame() {
         if (!enabled) return;
         long now = System.nanoTime();
+        ReloadProbe.beginFrame(now);
         if (recording && lastStart != 0) {
             frameMs.add((now - lastStart) / 1e6);
             frameStartEpochMs.add(epochOffsetMs + lastStart / 1e6);
@@ -233,6 +234,7 @@ public final class FrameTimer {
     public static void endLoopPhase(LoopPhase phase, long start) {
         if (!enabled) return;
         loopNs[phase.ordinal()] += System.nanoTime() - start;
+        if (phase == LoopPhase.SUBMIT) ReloadProbe.submit(System.nanoTime() - start);
         loopPhaseTimed[phase.ordinal()] = true;
     }
 

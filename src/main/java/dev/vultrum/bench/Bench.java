@@ -276,6 +276,7 @@ public final class Bench {
                 while (attempt == 0 && actions != null && actionsDone < actions.size())
                     if (act(mc, actions.get(actionsDone++))) return;
                 if (mc.options.renderDistance().get() != current.renderDistance()) {
+                    ReloadProbe.event("rd-" + mc.options.renderDistance().get() + "-" + current.renderDistance());
                     mc.options.renderDistance().set(current.renderDistance());
                     // The server caps each player at the view distance the client last sent, so a raise
                     // only takes effect once the client re-sends its options.
@@ -807,10 +808,15 @@ public final class Bench {
      * which comes back to PLACE once the world is open again.
      */
     private boolean act(Minecraft mc, String action) {
+        ReloadProbe.event(action);
         VultrumClient.LOGGER.info("[bench] {} before {}", action, cases.get(caseIndex).id());
         switch (action) {
             // F3+A
-            case "reload" -> mc.levelExtractor.allChanged();
+            case "reload" -> {
+                long start = System.nanoTime();
+                try { mc.levelExtractor.allChanged(); }
+                finally { ReloadProbe.stage("allChanged", start); }
+            }
             // F11, and the video settings' button
             case "fullscreen", "windowed" -> mc.options.fullscreen().set(action.equals("fullscreen"));
             // Dragging the window's edge: the swapchain and every render target change size.
@@ -1033,6 +1039,7 @@ public final class Bench {
         if (scenario.settingsCheck()) root.put("settings", settings);
         try {
             Files.createDirectories(out);
+            ReloadProbe.write(out);
             Files.writeString(out.resolve("results.json"), new GsonBuilder().setPrettyPrinting().serializeNulls().create().toJson(root));
             VultrumClient.LOGGER.info("[bench] wrote {} ({})", out.resolve("results.json"), status);
         } catch (IOException e) {
@@ -1085,6 +1092,7 @@ public final class Bench {
     }
 
     private void enter(Phase next) {
+        ReloadProbe.tag((caseIndex < cases.size() ? cases.get(caseIndex).id() : "done") + "/" + next);
         phase = next;
         phaseStart = System.nanoTime();
         stableTicks = 0;
