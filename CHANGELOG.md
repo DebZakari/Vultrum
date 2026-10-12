@@ -2,9 +2,11 @@
 
 What each release changed, for players. Newest first. Downloads are on [GitHub](https://github.com/DebZakari/Vultrum/releases) and Modrinth.
 
-## Unreleased
+## 0.1.0-alpha.2 (2026-10-12)
 
 - GPU Occlusion Culling now adapts automatically to GPUs with lower compute limits instead of switching off. The fallback was checked on the RTX 3090; AMD and Intel GPUs remain untested.
+
+This is a compatibility update. Performance on the RTX 3090 stayed within the variation between runs.
 
 ## 0.1.0-alpha.1 (2026-10-12)
 

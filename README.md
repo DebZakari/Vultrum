@@ -25,7 +25,7 @@
 </p>
 
 > [!NOTE]
-> Vultrum is in alpha. Version 0.1.0-alpha.1 has been tested on one PC: Windows 11, an NVIDIA RTX 3090 and a Ryzen 5 5600X. If something breaks or looks wrong, please [open an issue](https://github.com/DebZakari/Vultrum/issues) and say which GPU you have.
+> Vultrum is in alpha. Version 0.1.0-alpha.2 has been tested on one PC: Windows 11, an NVIDIA RTX 3090 and a Ryzen 5 5600X. If something breaks or looks wrong, please [open an issue](https://github.com/DebZakari/Vultrum/issues) and say which GPU you have.
 
 ## What it does
 
@@ -51,7 +51,7 @@ Inspired by [Nvidium](https://github.com/MCRcortex/nvidium) and [Vercidium's vox
   <img src="docs/images/flight-light.svg" alt="Bar chart of 1% low FPS while flying into new terrain, without and with Vultrum. Jungle at 32 chunks 83 to 113 (+36%), dark forest at 32 chunks 91 to 105 (+15%), jungle at 16 chunks 165 to 163 (-1%), dark forest at 16 chunks 170 to 176 (+4%).">
 </picture>
 
-Complementary Unbound through Vitrail, 1920×1080 fullscreen, RTX 3090 and Ryzen 5 5600X. "Without Vultrum" is the same game with all of Vultrum's settings off, which is plain Sodium and Vitrail. Every number is the mean of two runs of the benchmark in this repository ([`tools/bench.ps1`](tools/bench.ps1)).
+Complementary Unbound through Vitrail, 1920×1080 fullscreen, RTX 3090 and Ryzen 5 5600X, measured with Vultrum 0.1.0-alpha.1. "Without Vultrum" is the same game with all of Vultrum's settings off, which is plain Sodium and Vitrail. Every number is the mean of two runs of the benchmark in this repository ([`tools/bench.ps1`](tools/bench.ps1)).
 
 How much you gain depends on how much of the view is hidden. In a dark forest most of the terrain behind the first trees never gets drawn. High in the sky almost nothing is hidden, so the culling switches itself off and FPS stays where it was. At 16 chunks there's less to hide, and the gains are smaller (0 to 11%).
 
@@ -101,7 +101,7 @@ You need a Fabric instance for Minecraft 26.3 on Java 25, with these mods:
 | [Sodium](https://modrinth.com/mod/sodium) | 0.9.3-alpha.1 or later | required. 0.9.2 won't load with Vultrum |
 | [Fabric API](https://modrinth.com/mod/fabric-api) | 0.162.0+26.3 or later | required by Sodium |
 | [Vitrail Shaders](https://modrinth.com/mod/vitrail-shaders) | 0.12 | optional, for shader packs on Vulkan and for Vultrum's culling |
-| Vultrum | 0.1.0-alpha.1 | from [Releases](https://github.com/DebZakari/Vultrum/releases) |
+| Vultrum | 0.1.0-alpha.2 | from [Releases](https://github.com/DebZakari/Vultrum/releases) |
 
 Fabric Loader 0.19.5 or later.
 
@@ -136,7 +136,7 @@ Vultrum adds two pages to Sodium's video settings, **Culling** and **Loading**. 
 
 Vultrum is client-side. It works in singleplayer and on servers, and the server doesn't need it.
 
-The development version automatically adapts GPU occlusion culling to the GPU's compute limits, including devices without subgroup arithmetic or with 128-thread workgroups. This is not in 0.1.0-alpha.1. Both compute paths have been checked on the RTX 3090; AMD and Intel hardware remain untested.
+Since 0.1.0-alpha.2, GPU occlusion culling automatically adapts to the GPU's compute limits, including devices without subgroup arithmetic or with 128-thread workgroups. Both compute paths have been checked on the RTX 3090; AMD and Intel hardware remain untested.
 
 Tested on Vulkan together with Vitrail and Complementary Unbound, all in one instance, with no errors from Vultrum:
 
