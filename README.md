@@ -10,7 +10,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/DebZakari/Vultrum/releases">Download</a> ·
+  <a href="https://github.com/DebZakari/Vultrum/releases">GitHub</a> ·
+  <a href="https://modrinth.com/mod/vultrum">Modrinth</a> ·
   <a href="CHANGELOG.md">Changelog</a> ·
   <a href="#install">Install</a> ·
   <a href="#settings">Settings</a> ·
@@ -25,7 +26,7 @@
 </p>
 
 > [!NOTE]
-> Vultrum is in alpha. Version 0.1.0-alpha.2 has been tested on one PC: Windows 11, an NVIDIA RTX 3090 and a Ryzen 5 5600X. If something breaks or looks wrong, please [open an issue](https://github.com/DebZakari/Vultrum/issues) and say which GPU you have.
+> Vultrum is in alpha. Version 0.1.0-alpha.3 has been tested on one PC: Windows 11, an NVIDIA RTX 3090 and a Ryzen 5 5600X. If something breaks or looks wrong, please [open an issue](https://github.com/DebZakari/Vultrum/issues) and say which GPU you have.
 
 ## What it does
 
@@ -33,13 +34,15 @@ Minecraft 26.3 can draw with Vulkan instead of OpenGL. Vultrum adds two things o
 
 **With a Vitrail shader pack**, it works out on the GPU, every frame, which terrain is hidden behind hills, trees and buildings, and skips drawing it. It also leaves block faces out of the shadow map when they can't change a shadow. Dense scenes gain the most: 29% more FPS in a dark forest at render distance 32. Terrain and shadows look the same.
 
-**With or without shaders**, it smooths out chunk loading. Sodium does some of its loading work in bursts: a pile of new chunks from the server, the chunks that leave your view, the cleanup after Java's garbage collector runs. Vultrum spreads that work over several frames, so flying into new terrain stutters less.
+**With or without shaders**, it smooths out chunk loading. Sodium does some of its loading work in bursts: a pile of new chunks from the server, the chunks that leave your view, the cleanup after Java's garbage collector runs. Vultrum spreads that work over several frames, so flying into new terrain stutters less. Alpha.3 also spreads already-loaded terrain registration across frames after F3+A or a render distance change, reducing reload freezes.
 
-Everything is on by default and can be turned off in Sodium's video settings.
+Most features are on by default and can be turned off in Sodium's video settings. Skip Sunless Terrain is off by default.
 
 Inspired by [Nvidium](https://github.com/MCRcortex/nvidium) and [Vercidium's voxel optimisation work](https://vercidium.com/blog/voxel-world-optimisations/).
 
 ## Performance
+
+In alpha.3, median peak frames during repeated terrain reloads at 32 chunks were 27–47% shorter across three comparisons on the RTX 3090. A longer comparison confirmed the improvement. Average FPS stayed essentially unchanged; the change reduces reload freezes. The FPS charts and flight results below were measured with alpha.1.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/fps-dark.svg">
@@ -101,7 +104,7 @@ You need a Fabric instance for Minecraft 26.3 on Java 25, with these mods:
 | [Sodium](https://modrinth.com/mod/sodium) | 0.9.3-alpha.1 or later | required. 0.9.2 won't load with Vultrum |
 | [Fabric API](https://modrinth.com/mod/fabric-api) | 0.162.0+26.3 or later | required by Sodium |
 | [Vitrail Shaders](https://modrinth.com/mod/vitrail-shaders) | 0.12 | optional, for shader packs on Vulkan and for Vultrum's culling |
-| Vultrum | 0.1.0-alpha.2 | from [Releases](https://github.com/DebZakari/Vultrum/releases) |
+| Vultrum | 0.1.0-alpha.3 | from [GitHub Releases](https://github.com/DebZakari/Vultrum/releases) or [Modrinth](https://modrinth.com/mod/vultrum) |
 
 Fabric Loader 0.19.5 or later.
 
@@ -137,7 +140,7 @@ Vultrum adds two pages to Sodium's video settings, **Culling** and **Loading**. 
 
 Vultrum is client-side. It works in singleplayer and on servers, and the server doesn't need it.
 
-Since 0.1.0-alpha.2, GPU occlusion culling automatically adapts to the GPU's compute limits, including devices without subgroup arithmetic or with 128-thread workgroups. Both compute paths have been checked on the RTX 3090; AMD and Intel hardware remain untested.
+GPU occlusion culling automatically adapts to the GPU's compute limits, including devices without subgroup arithmetic or with 128-thread workgroups. Both compute paths have been checked on the RTX 3090; AMD and Intel hardware remain untested.
 
 Tested on Vulkan together with Vitrail and Complementary Unbound, all in one instance, with no errors from Vultrum:
 

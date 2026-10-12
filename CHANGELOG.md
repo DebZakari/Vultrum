@@ -1,6 +1,6 @@
 # Changelog
 
-What each release changed, for players. Newest first. Downloads are on [GitHub](https://github.com/DebZakari/Vultrum/releases) and Modrinth.
+What each release changed, for players. Newest first. Downloads are on [GitHub](https://github.com/DebZakari/Vultrum/releases) and [Modrinth](https://modrinth.com/mod/vultrum).
 
 ## 0.1.0-alpha.3 (2026-10-13)
 
