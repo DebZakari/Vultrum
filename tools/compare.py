@@ -3,16 +3,15 @@
 Usage: python tools/compare.py bench-runs/<baseline> bench-runs/<candidate>
 Diff images are written to <candidate>/compare-<baseline-name>/.
 """
+import argparse
 import json
 import math
 import os
 import shutil
 import subprocess
-import sys
 from pathlib import Path
 
-from gpu_log import gpu_telemetry
-from vitrail_log import SHADOW_TERRAIN, TERRAIN, pass_timings
+from bench_evidence import Run, assess, get
 
 # (label, path into the run's join record, higher is better)
 JOIN_METRICS = [
@@ -75,34 +74,6 @@ METRICS = [
     ("gpu clock MHz", ("gpu", "clockMhz"), None),
     ("gpu power W", ("gpu", "powerW"), None),
 ]
-
-
-def load(run):
-    data = json.loads((run / "results.json").read_text(encoding="utf-8"))
-    cases = {case["id"]: case for case in data["cases"]}
-    # Older probe runs list their long terrain setups (at most 32) without counting them.
-    for case in cases.values():
-        if "longSetups" in case and "longSetupCount" not in case:
-            case["longSetupCount"] = len(case["longSetups"])
-    # Shader runs: add Vitrail's per-pass GPU breakdown from the log.
-    for case_id, t in pass_timings(run).items():
-        if case_id in cases:
-            cases[case_id]["vitrail"] = {"spanMs": t["spanMs"], "terrainMs": t["labels"].get(TERRAIN),
-                                         "shadowTerrainMs": t["labels"].get(SHADOW_TERRAIN)}
-    # Runs since gpu.csv logging: clocks and power, to tell a code change from throttling.
-    for case_id, t in gpu_telemetry(run).items():
-        if case_id in cases:
-            cases[case_id]["gpu"] = t
-    return data, cases
-
-
-def get(case, path):
-    value = case
-    for key in path:
-        value = value.get(key) if isinstance(value, dict) else None
-    return value
-
-
 def print_metrics(b, c, metrics):
     for label, path, higher_better in metrics:
         bv, cv = get(b, path), get(c, path)
@@ -126,45 +97,20 @@ def java_executable():
     return shutil.which("java") or "java"
 
 
-def jvm_flags(run):
-    """The game JVM's -X/-XX flags (GC, heap), without system properties or a flight recording."""
-    return sorted(a for a in run.get("jvmArgs") or [] if a.startswith("-X") and not a.startswith("-XX:StartFlightRecording"))
-
-
-def vultrum_settings(run_dir):
-    """The run dir's vultrum.properties as each run copied it, or None for older runs."""
-    path = run_dir / "vultrum.properties"
-    if not path.exists():
-        return None
-    settings = {}
-    for line in path.read_text(encoding="utf-8").splitlines():
-        key, sep, value = line.partition("=")
-        if sep and not key.lstrip().startswith("#"):
-            settings[key.strip()] = value.strip()
-    return settings
-
-
-def main(base_dir, cand_dir):
+def main(base_dir, cand_dir, *, expected=None, allow_uncapped_unfocused=False, images=True):
     base_dir, cand_dir = Path(base_dir), Path(cand_dir)
-    base, base_cases = load(base_dir)
-    cand, cand_cases = load(cand_dir)
+    baseline, candidate = Run.read(base_dir), Run.read(cand_dir)
+    base, base_cases = baseline.results, baseline.cases
+    cand, cand_cases = candidate.results, candidate.cases
     print(f"baseline:  {base_dir.name} ({base['status']})")
     print(f"candidate: {cand_dir.name} ({cand['status']})")
-    # reclaimThread: early runs turned the thread on with a toggle file, which vultrum.properties doesn't show.
-    for key in ("device", "framebuffer", "options", "reclaimThread"):
-        if base.get(key) != cand.get(key):
-            print(f"WARNING {key} differs: {base.get(key)} vs {cand.get(key)}")
-    if jvm_flags(base) != jvm_flags(cand):
-        print(f"WARNING JVM flags differ (GC, heap): {jvm_flags(base)} vs {jvm_flags(cand)}")
-    # A setting the older run's file doesn't have didn't exist yet: None.
-    base_settings, cand_settings = vultrum_settings(base_dir), vultrum_settings(cand_dir)
-    if base_settings is not None and cand_settings is not None:
-        changed = {key: (base_settings.get(key), cand_settings.get(key)) for key in sorted(base_settings.keys() | cand_settings.keys())
-                   if base_settings.get(key) != cand_settings.get(key)}
-        if changed:
-            print(f"WARNING Vultrum settings differ: {changed}")
-    if base.get("mods") != cand.get("mods"):
-        print(f"mods: {base.get('mods')} -> {cand.get('mods')}")
+    report = assess(baseline, candidate, expected=expected, allow_uncapped_unfocused=allow_uncapped_unfocused)
+    print("timing evidence: " + ("eligible pair; series gate still required" if report.eligible else "exploratory only"))
+    for change in report.expected_changes:
+        print("EXPECTED " + change)
+    for reason in report.exclusions:
+        print("EXCLUDED " + reason)
+    print("Metric better/worse labels are descriptive +/-3% hints, not keep decisions.")
 
     if base.get("join") or cand.get("join"):
         print("\njoin")
@@ -176,7 +122,8 @@ def main(base_dir, cand_dir):
             print("  flags: ['joinIncomplete']")
 
     diff_dir = cand_dir / f"compare-{base_dir.name}"
-    diff_dir.mkdir(exist_ok=True)
+    if images:
+        diff_dir.mkdir(exist_ok=True)
     image_tool = Path(__file__).with_name("ImageDiff.java")
 
     for case_id, b in base_cases.items():
@@ -191,14 +138,21 @@ def main(base_dir, cand_dir):
             flags.append("loadIncomplete")
         if flags:
             print(f"  flags: {flags}")
-        b_png, c_png = base_dir / b["screenshot"], cand_dir / c["screenshot"]
-        if b_png.exists() and c_png.exists():
+        b_png, c_png = base_dir / b.get("screenshot", "missing.png"), cand_dir / c.get("screenshot", "missing.png")
+        if images and b_png.exists() and c_png.exists():
             result = subprocess.run([java_executable(), str(image_tool), str(b_png), str(c_png),
                                      str(diff_dir / f"{case_id}.png")], capture_output=True, text=True)
             print(f"  screenshot diff: {result.stdout.strip() or result.stderr.strip()}")
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        sys.exit(__doc__)
-    main(sys.argv[1], sys.argv[2])
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("baseline", type=Path)
+    parser.add_argument("candidate", type=Path)
+    parser.add_argument("--expected", type=Path, help="JSON identity paths mapped to exact [control, candidate] values")
+    parser.add_argument("--allow-uncapped-unfocused", action="store_true", help="accept matched unfocused runs only with saved uncapped background settings and no Dynamic FPS")
+    parser.add_argument("--no-images", action="store_true", help="print evidence and metrics without creating screenshot diffs")
+    args = parser.parse_args()
+    expected = json.loads(args.expected.read_text(encoding="utf-8-sig")) if args.expected else None
+    main(args.baseline, args.candidate, expected=expected,
+         allow_uncapped_unfocused=args.allow_uncapped_unfocused, images=not args.no_images)
