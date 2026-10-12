@@ -27,6 +27,9 @@ final class CullPreparation {
 
     void append(Object drawContext, int command, int size, int region, boolean translucent, int recordedRegion, int[] recorded) {
         if (!collecting || !valid) return;
+        // Opaque commands without a region key cannot be distinguished from excluded translucent commands.
+        // Keep the entire frame on the original path instead of risking a duplicate or missing recovery draw.
+        if (!translucent && region < 0) { valid = false; return; }
         if (command < 0 || size < 0 || (context != null && context != drawContext)) { valid = false; return; }
         context = drawContext;
         if (first < 0) first = command;
@@ -35,7 +38,7 @@ final class CullPreparation {
         int end = Math.addExact(at, size), words = Math.multiplyExact(end, 4);
         if (words > sections.length) sections = Arrays.copyOf(sections, Math.max(words, sections.length * 2));
         Arrays.fill(sections, count * 4, at * 4, -1);
-        if (translucent || region < 0) Arrays.fill(sections, at * 4, words, -1);
+        if (translucent) Arrays.fill(sections, at * 4, words, -1);
         else {
             CullBatch.copySections(recorded, size, recordedRegion, region, sections, at);
             maxRegion = Math.max(maxRegion, region);

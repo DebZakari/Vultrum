@@ -59,4 +59,14 @@ class CullPreparationTest {
         assertEquals(-1, prep.sections[15]);
         assertEquals(519, prep.sections[19]);
     }
+
+    @Test void opaqueCommandsWithoutARegionKeyKeepTheWholeFrameOnTheOriginalPath() {
+        var prep = new CullPreparation();
+        prep.run(true, () -> {
+            batch(prep, 20);
+            prep.append(context, 21, 1, -1, false, -1, section);
+        });
+        assertFalse(prep.take());
+        assertNull(prep.context);
+    }
 }

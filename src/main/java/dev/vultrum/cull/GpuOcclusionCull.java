@@ -194,7 +194,8 @@ public final class GpuOcclusionCull {
             if (pipelines == null) {
                 computePath = computePath(vulkan);
                 faults.hit("unsupported-compute");
-                if (computePath == null) throw unavailable("unsupported hardware: compute shaders lack " + ComputePath.MIN_GROUP + "-wide workgroups");
+                if (computePath == null) throw unavailable("unsupported hardware: cull needs " + ComputePath.MIN_GROUP
+                        + "-wide compute workgroups and six storage-buffer descriptors");
             }
             ensurePipelines(vulkan);
             ensureResources(device, pyramid.texels());

@@ -109,13 +109,12 @@ void main() {
     bool draw = false;
     // Recovery is independent of Hi-Z and of instance counts rewritten by phase 2.
     if (push.mode >= 2u) {
-        if (i < commandCount && (live || push.mode == 3u))
-            words[c + 1u] = push.mode == 2u || (live && phase1Drawn[i] == 0u) ? 1u : 0u;
+        if (live) words[c + 1u] = push.mode == 2u || phase1Drawn[i] == 0u ? 1u : 0u;
         return;
     }
     if (push.mode == 0u) {
         draw = live && visibleFrame[s.w] == frame - 1u;
-        if (i < commandCount) phase1Drawn[i] = live ? (draw ? 1u : 0u) : 1u;
+        if (live) phase1Drawn[i] = draw ? 1u : 0u;
         if (live) words[c + 1u] = draw ? 1u : 0u;
 #ifdef PORTABLE_COUNTERS
         uvec4 total = sumCounts(uvec4(draw ? 1u : 0u, draw ? listed : 0u, 0u, 0u));
