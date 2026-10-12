@@ -15,12 +15,13 @@ import java.util.Properties;
  * Changes made in game ({@link VultrumOptions}) are written at once and take effect at the next launch.
  */
 public record VultrumConfig(boolean shadowFaceCull, boolean occlusionCull, boolean sunlessShadow, boolean packetBudget,
-                            boolean arenaCap, boolean unloadBudget, boolean reclaimThread) {
-    public static final VultrumConfig DEFAULTS = new VultrumConfig(true, true, false, true, true, true, true);
+                            boolean arenaCap, boolean unloadBudget, boolean reclaimThread, boolean reloadRegistration) {
+    public static final VultrumConfig DEFAULTS = new VultrumConfig(true, true, false, true, true, true, true, true);
     static final String SHADOW_FACE_CULL = "shadow-face-cull", OCCLUSION_CULL = "occlusion-cull", SUNLESS_SHADOW = "sunless-shadow",
-            PACKET_BUDGET = "packet-budget", ARENA_CAP = "arena-cap", UNLOAD_BUDGET = "unload-budget", RECLAIM_THREAD = "reclaim-thread";
+            PACKET_BUDGET = "packet-budget", ARENA_CAP = "arena-cap", UNLOAD_BUDGET = "unload-budget", RECLAIM_THREAD = "reclaim-thread",
+            RELOAD_REGISTRATION = "reload-registration";
     static final List<String> KEYS = List.of(SHADOW_FACE_CULL, OCCLUSION_CULL, SUNLESS_SHADOW, PACKET_BUDGET, ARENA_CAP, UNLOAD_BUDGET,
-            RECLAIM_THREAD);
+            RECLAIM_THREAD, RELOAD_REGISTRATION);
     private static VultrumConfig current, next;
 
     /** The game's settings, read on first use. Mixins may need them before the client initializer runs. */
@@ -47,31 +48,35 @@ public record VultrumConfig(boolean shadowFaceCull, boolean occlusionCull, boole
     }
 
     public VultrumConfig withShadowFaceCull(boolean on) {
-        return new VultrumConfig(on, occlusionCull, sunlessShadow, packetBudget, arenaCap, unloadBudget, reclaimThread);
+        return new VultrumConfig(on, occlusionCull, sunlessShadow, packetBudget, arenaCap, unloadBudget, reclaimThread, reloadRegistration);
     }
 
     public VultrumConfig withOcclusionCull(boolean on) {
-        return new VultrumConfig(shadowFaceCull, on, sunlessShadow, packetBudget, arenaCap, unloadBudget, reclaimThread);
+        return new VultrumConfig(shadowFaceCull, on, sunlessShadow, packetBudget, arenaCap, unloadBudget, reclaimThread, reloadRegistration);
     }
 
     public VultrumConfig withSunlessShadow(boolean on) {
-        return new VultrumConfig(shadowFaceCull, occlusionCull, on, packetBudget, arenaCap, unloadBudget, reclaimThread);
+        return new VultrumConfig(shadowFaceCull, occlusionCull, on, packetBudget, arenaCap, unloadBudget, reclaimThread, reloadRegistration);
     }
 
     public VultrumConfig withPacketBudget(boolean on) {
-        return new VultrumConfig(shadowFaceCull, occlusionCull, sunlessShadow, on, arenaCap, unloadBudget, reclaimThread);
+        return new VultrumConfig(shadowFaceCull, occlusionCull, sunlessShadow, on, arenaCap, unloadBudget, reclaimThread, reloadRegistration);
     }
 
     public VultrumConfig withArenaCap(boolean on) {
-        return new VultrumConfig(shadowFaceCull, occlusionCull, sunlessShadow, packetBudget, on, unloadBudget, reclaimThread);
+        return new VultrumConfig(shadowFaceCull, occlusionCull, sunlessShadow, packetBudget, on, unloadBudget, reclaimThread, reloadRegistration);
     }
 
     public VultrumConfig withUnloadBudget(boolean on) {
-        return new VultrumConfig(shadowFaceCull, occlusionCull, sunlessShadow, packetBudget, arenaCap, on, reclaimThread);
+        return new VultrumConfig(shadowFaceCull, occlusionCull, sunlessShadow, packetBudget, arenaCap, on, reclaimThread, reloadRegistration);
     }
 
     public VultrumConfig withReclaimThread(boolean on) {
-        return new VultrumConfig(shadowFaceCull, occlusionCull, sunlessShadow, packetBudget, arenaCap, unloadBudget, on);
+        return new VultrumConfig(shadowFaceCull, occlusionCull, sunlessShadow, packetBudget, arenaCap, unloadBudget, on, reloadRegistration);
+    }
+
+    public VultrumConfig withReloadRegistration(boolean on) {
+        return new VultrumConfig(shadowFaceCull, occlusionCull, sunlessShadow, packetBudget, arenaCap, unloadBudget, reclaimThread, on);
     }
 
     public static VultrumConfig load(Path file) {
@@ -89,7 +94,8 @@ public record VultrumConfig(boolean shadowFaceCull, boolean occlusionCull, boole
         var config = new VultrumConfig(flag(properties, SHADOW_FACE_CULL, DEFAULTS.shadowFaceCull),
                 flag(properties, OCCLUSION_CULL, DEFAULTS.occlusionCull), flag(properties, SUNLESS_SHADOW, DEFAULTS.sunlessShadow),
                 flag(properties, PACKET_BUDGET, DEFAULTS.packetBudget), flag(properties, ARENA_CAP, DEFAULTS.arenaCap),
-                flag(properties, UNLOAD_BUDGET, DEFAULTS.unloadBudget), flag(properties, RECLAIM_THREAD, DEFAULTS.reclaimThread));
+                flag(properties, UNLOAD_BUDGET, DEFAULTS.unloadBudget), flag(properties, RECLAIM_THREAD, DEFAULTS.reclaimThread),
+                flag(properties, RELOAD_REGISTRATION, DEFAULTS.reloadRegistration));
         if (!KEYS.stream().allMatch(properties::containsKey)) write(file, config);
         return config;
     }
@@ -141,9 +147,14 @@ public record VultrumConfig(boolean shadowFaceCull, boolean occlusionCull, boole
                     # Let a thread of its own tidy up after Sodium's discarded terrain buffers. Without it, the frame
                     # after a garbage collection tidies up tens of thousands of them at once: up to 33 ms in tests.
                     %s=%b
+
+                    # Register about 2 ms of already-loaded columns a frame after a terrain reload, instead of all
+                    # of them in one frame. New chunk arrivals are handled immediately as before.
+                    %s=%b
                     """.formatted(SHADOW_FACE_CULL, config.shadowFaceCull, OCCLUSION_CULL, config.occlusionCull,
                     SUNLESS_SHADOW, config.sunlessShadow, PACKET_BUDGET, config.packetBudget, ARENA_CAP, config.arenaCap,
-                    UNLOAD_BUDGET, config.unloadBudget, RECLAIM_THREAD, config.reclaimThread));
+                    UNLOAD_BUDGET, config.unloadBudget, RECLAIM_THREAD, config.reclaimThread,
+                    RELOAD_REGISTRATION, config.reloadRegistration));
         } catch (IOException e) {
             VultrumClient.LOGGER.warn("Can't write {}", file, e);
         }

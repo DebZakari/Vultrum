@@ -29,6 +29,7 @@ class VultrumConfigTest {
         assertTrue(Files.readString(file).contains("arena-cap=true"));
         assertTrue(Files.readString(file).contains("unload-budget=true"));
         assertTrue(Files.readString(file).contains("reclaim-thread=true"));
+        assertTrue(Files.readString(file).contains("reload-registration=true"));
         assertEquals(VultrumConfig.DEFAULTS, VultrumConfig.load(file), "the written file reads back as the defaults");
     }
 
@@ -56,6 +57,9 @@ class VultrumConfigTest {
         var threadOff = loadWith("reclaim-thread=false\n");
         assertFalse(threadOff.reclaimThread());
         assertTrue(threadOff.unloadBudget());
+        var reloadOff = loadWith("reload-registration=false\n");
+        assertFalse(reloadOff.reloadRegistration());
+        assertTrue(reloadOff.reclaimThread());
     }
 
     @Test
@@ -69,6 +73,8 @@ class VultrumConfigTest {
         assertTrue(loadWith("packet-budget=false\n").arenaCap(), "a file from before the key existed gets the cap");
         assertTrue(loadWith("arena-cap=false\n").unloadBudget(), "a file from before the key existed gets the unload budget");
         assertTrue(loadWith("unload-budget=false\n").reclaimThread(), "a file from before the key existed gets the reclaim thread");
+        assertTrue(loadWith("reclaim-thread=false\n").reloadRegistration(), "an older file gets reload registration");
+        assertTrue(loadWith("reload-registration=invalid\n").reloadRegistration());
     }
 
     @Test
@@ -81,15 +87,16 @@ class VultrumConfigTest {
         assertTrue(Files.readString(file).contains("arena-cap=true"));
         assertTrue(Files.readString(file).contains("unload-budget=true"));
         assertTrue(Files.readString(file).contains("reclaim-thread=true"));
+        assertTrue(Files.readString(file).contains("reload-registration=true"));
         assertEquals(config, VultrumConfig.load(file), "the rewrite keeps the values it read");
     }
 
     @Test
     void writtenSettingsReadBack() {
         Path file = dir.resolve("vultrum.properties");
-        for (int bits = 0; bits < 128; bits++) {
+        for (int bits = 0; bits < 256; bits++) {
             var config = new VultrumConfig((bits & 1) != 0, (bits & 2) != 0, (bits & 4) != 0, (bits & 8) != 0, (bits & 16) != 0, (bits & 32) != 0,
-                    (bits & 64) != 0);
+                    (bits & 64) != 0, (bits & 128) != 0);
             VultrumConfig.write(file, config);
             assertEquals(config, VultrumConfig.load(file));
         }
@@ -97,20 +104,21 @@ class VultrumConfigTest {
 
     @Test
     void copiesChangeOneSetting() {
-        var config = new VultrumConfig(true, false, true, false, true, false, true);
-        assertEquals(new VultrumConfig(false, false, true, false, true, false, true), config.withShadowFaceCull(false));
-        assertEquals(new VultrumConfig(true, true, true, false, true, false, true), config.withOcclusionCull(true));
-        assertEquals(new VultrumConfig(true, false, false, false, true, false, true), config.withSunlessShadow(false));
-        assertEquals(new VultrumConfig(true, false, true, true, true, false, true), config.withPacketBudget(true));
-        assertEquals(new VultrumConfig(true, false, true, false, false, false, true), config.withArenaCap(false));
-        assertEquals(new VultrumConfig(true, false, true, false, true, true, true), config.withUnloadBudget(true));
-        assertEquals(new VultrumConfig(true, false, true, false, true, false, false), config.withReclaimThread(false));
+        var config = new VultrumConfig(true, false, true, false, true, false, true, false);
+        assertEquals(new VultrumConfig(false, false, true, false, true, false, true, false), config.withShadowFaceCull(false));
+        assertEquals(new VultrumConfig(true, true, true, false, true, false, true, false), config.withOcclusionCull(true));
+        assertEquals(new VultrumConfig(true, false, false, false, true, false, true, false), config.withSunlessShadow(false));
+        assertEquals(new VultrumConfig(true, false, true, true, true, false, true, false), config.withPacketBudget(true));
+        assertEquals(new VultrumConfig(true, false, true, false, false, false, true, false), config.withArenaCap(false));
+        assertEquals(new VultrumConfig(true, false, true, false, true, true, true, false), config.withUnloadBudget(true));
+        assertEquals(new VultrumConfig(true, false, true, false, true, false, false, false), config.withReclaimThread(false));
+        assertEquals(new VultrumConfig(true, false, true, false, true, false, true, true), config.withReloadRegistration(true));
     }
 
     @Test
     void aCompleteFileIsLeftAlone() throws IOException {
         String content = "shadow-face-cull=false\nocclusion-cull=false\nsunless-shadow=true\npacket-budget=false\narena-cap=false\nunload-budget=false\n"
-                + "reclaim-thread=false\n";
+                + "reclaim-thread=false\nreload-registration=false\n";
         loadWith(content);
         assertEquals(content, Files.readString(dir.resolve("vultrum.properties")));
     }

@@ -4,6 +4,6 @@
   "plugin": "dev.vultrum.VultrumMixinPlugin",
   "compatibilityLevel": "JAVA_25",
   "client": ["ClientLevelMixin", "DefaultChunkRendererMixin", "DrawBackendMixin", "FrontendGpuDeviceAccessor", "FrontendRenderPassAccessor", "GameRendererMixin", "HudAccessor", "KeyboardHandlerMixin", "MinecraftMixin",
-             "MouseHandlerMixin", "MultiDrawBatchMixin", "PacketProcessorMixin", "ReloadArenaMixin", "ReloadBufferMixin", "ReloadSubmitMixin", "ReloadStagesMixin", "RenderSectionManagerMixin", "SodiumArenaSizeMixin", "SodiumChunkEventsMixin", "SodiumChunkTrackerAccessor", "SodiumColumnsMixin", "SodiumNativeBufferMixin", "SodiumReclaimThreadMixin", "SodiumSetupPhasesMixin", "SodiumWorldRendererMixin", "VKIndirectDrawBatchAccessor", "VulkanCommandEncoderAccessor", "VulkanConstMixin", "VulkanDeviceAccessor", "VulkanFeatureSetsMixin", "VitrailSodiumApiMixin", "VitrailTerrainDrawMixin", "VulkanRenderPassAccessor"],
+             "MouseHandlerMixin", "MultiDrawBatchMixin", "PacketProcessorMixin", "RenderSectionManagerMixin", "SodiumArenaSizeMixin", "SodiumChunkEventsMixin", "SodiumChunkTrackerAccessor", "SodiumColumnsMixin", "SodiumNativeBufferMixin", "SodiumReclaimThreadMixin", "SodiumSetupPhasesMixin", "SodiumWorldRendererMixin", "VKIndirectDrawBatchAccessor", "VulkanCommandEncoderAccessor", "VulkanConstMixin", "VulkanDeviceAccessor", "VulkanFeatureSetsMixin", "VitrailSodiumApiMixin", "VitrailTerrainDrawMixin", "VulkanRenderPassAccessor"],
   "injectors": { "defaultRequire": 1 }
 }

@@ -130,6 +130,7 @@ Vultrum adds two pages to Sodium's video settings, **Culling** and **Loading**. 
 | Spread Chunk Arrivals | on | Handles at most 1 ms of the server's packets a frame, so a burst of new chunks is spread out. |
 | Smaller Terrain Buffers | on | Caps each new terrain buffer at 96 MiB. A bigger one stalled the GPU for up to 5 ms. Uses up to 0.6 GB more video memory when flying fast at 32 chunks. |
 | Spread Chunk Unloads | on | Removes about 0.25 ms worth of chunks a frame instead of all of them at once. |
+| Spread Terrain Reloads | on | Registers about 2 ms of already-loaded terrain columns a frame after F3+A or a render distance change. Terrain reappears over several frames while the reload completes. |
 | Background Buffer Cleanup | on | Moves Sodium's buffer cleanup to its own thread. After a garbage collection it could take up to 33 ms of one frame. |
 
 ## Compatibility

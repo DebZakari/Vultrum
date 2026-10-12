@@ -38,7 +38,7 @@ public final class VultrumMixinPlugin implements IMixinConfigPlugin {
      */
     private static final Set<String> BENCH_ONLY = Set.of("dev.vultrum.mixin.ClientLevelMixin", "dev.vultrum.mixin.MinecraftMixin",
             "dev.vultrum.mixin.RenderSectionManagerMixin", "dev.vultrum.mixin.SodiumSetupPhasesMixin",
-            "dev.vultrum.mixin.SodiumNativeBufferMixin", "dev.vultrum.mixin.ReloadArenaMixin", "dev.vultrum.mixin.ReloadBufferMixin", "dev.vultrum.mixin.ReloadSubmitMixin", "dev.vultrum.mixin.ReloadStagesMixin");
+            "dev.vultrum.mixin.SodiumNativeBufferMixin");
 
     // Not VultrumClient.LOGGER: mixin plugins load before mod initialisation, and that class needn't load this early.
     private static final Logger LOGGER = LoggerFactory.getLogger("Vultrum");

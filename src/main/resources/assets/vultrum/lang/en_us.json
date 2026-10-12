@@ -15,5 +15,7 @@
   "vultrum.options.unload_budget": "Spread Chunk Unloads",
   "vultrum.options.unload_budget.tooltip": "Removes about 0.25 ms of chunks a frame from Sodium's terrain (more while thousands wait), so the chunks that leave the view aren't all removed in one frame. Flying at 32 chunks stuttered about a third less often in tests, and the longest frame after a long teleport was less than half as long.\n\nChunks waiting to be removed keep their video memory a little longer.",
   "vultrum.options.reclaim_thread": "Background Buffer Cleanup",
-  "vultrum.options.reclaim_thread.tooltip": "Tidies up after Sodium's discarded terrain buffers on a thread of its own. Without it, the frame after a garbage collection tidies up tens of thousands of them at once: up to 33 ms in tests.\n\nThe work moves to another CPU core; it doesn't get smaller."
+  "vultrum.options.reclaim_thread.tooltip": "Tidies up after Sodium's discarded terrain buffers on a thread of its own. Without it, the frame after a garbage collection tidies up tens of thousands of them at once: up to 33 ms in tests.\n\nThe work moves to another CPU core; it doesn't get smaller.",
+  "vultrum.options.reload_registration": "Spread Terrain Reloads",
+  "vultrum.options.reload_registration.tooltip": "Registers about 2 ms of already-loaded terrain columns a frame after F3+A or a render distance change. Terrain reappears over several frames while the reload completes.\n\nNew chunk arrivals are handled immediately as before."
 }

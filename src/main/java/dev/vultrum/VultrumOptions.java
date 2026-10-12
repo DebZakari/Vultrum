@@ -35,12 +35,13 @@ public final class VultrumOptions implements ConfigEntryPoint {
                 .addOption(option(builder, VultrumConfig.SHADOW_FACE_CULL, hooked, storage, VultrumConfig::shadowFaceCull, VultrumConfig::withShadowFaceCull))
                 .addOption(option(builder, VultrumConfig.SUNLESS_SHADOW, hooked, storage, VultrumConfig::sunlessShadow, VultrumConfig::withSunlessShadow));
         // Need neither Vitrail nor a shader pack: they hold back the client's packets, size Sodium's buffers, spread its
-        // chunk removals and move its buffer reclaim off the render thread.
+        // chunk removals and reload registration, and move its buffer reclaim off the render thread.
         var loading = builder.createOptionGroup()
                 .addOption(option(builder, VultrumConfig.PACKET_BUDGET, true, storage, VultrumConfig::packetBudget, VultrumConfig::withPacketBudget))
                 .addOption(option(builder, VultrumConfig.ARENA_CAP, true, storage, VultrumConfig::arenaCap, VultrumConfig::withArenaCap))
                 .addOption(option(builder, VultrumConfig.UNLOAD_BUDGET, true, storage, VultrumConfig::unloadBudget, VultrumConfig::withUnloadBudget))
-                .addOption(option(builder, VultrumConfig.RECLAIM_THREAD, true, storage, VultrumConfig::reclaimThread, VultrumConfig::withReclaimThread));
+                .addOption(option(builder, VultrumConfig.RECLAIM_THREAD, true, storage, VultrumConfig::reclaimThread, VultrumConfig::withReclaimThread))
+                .addOption(option(builder, VultrumConfig.RELOAD_REGISTRATION, true, storage, VultrumConfig::reloadRegistration, VultrumConfig::withReloadRegistration));
         // The logo's symbol, tinted with the logo's ember (Sodium lifts a base colour to at least 0.2 saturation and 0.55 value).
         builder.registerOwnModOptions()
                 .setIcon(Identifier.fromNamespaceAndPath("vultrum", "textures/gui/config-icon.png"))
