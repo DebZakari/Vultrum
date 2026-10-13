@@ -25,7 +25,7 @@ public final class VultrumMixinPlugin implements IMixinConfigPlugin {
     record Range(String modId, String range) {}
 
     static final Range SODIUM = new Range("sodium", ">=0.9.3-alpha.1 <0.9.4-alpha");
-    static final Range VITRAIL = new Range("vitrail", ">=0.12.0-alpha <0.13.0-alpha");
+    static final Range VITRAIL = new Range("vitrail", ">=0.12.0-alpha <0.14.0-alpha");
     /**
      * Mixins into each package need every listed mod installed and in range. The Vitrail hooks feed the
      * shadow face cull, which uses Sodium's API, so they need Sodium in range too.

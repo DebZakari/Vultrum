@@ -39,13 +39,16 @@ class VultrumMixinPluginTest {
     }
 
     @Test
-    void vitrailRangeCoversThe012Line() throws VersionParsingException {
-        assertTrue(allows(VultrumMixinPlugin.VITRAIL, "0.12.0-beta-blockcracks3"), "the tested build");
+    void vitrailRangeCoversThe012And013Lines() throws VersionParsingException {
+        assertTrue(allows(VultrumMixinPlugin.VITRAIL, "0.12.0-beta-blockcracks3"), "a tested build");
         assertTrue(allows(VultrumMixinPlugin.VITRAIL, "0.12.0"));
         assertTrue(allows(VultrumMixinPlugin.VITRAIL, "0.12.5"));
+        assertTrue(allows(VultrumMixinPlugin.VITRAIL, "0.13.0-beta"), "a tested build");
+        assertTrue(allows(VultrumMixinPlugin.VITRAIL, "0.13.0-beta+mc26.3"));
+        assertTrue(allows(VultrumMixinPlugin.VITRAIL, "0.13.0"));
         assertFalse(allows(VultrumMixinPlugin.VITRAIL, "0.11.9"));
-        assertFalse(allows(VultrumMixinPlugin.VITRAIL, "0.13.0-beta.1"));
-        assertFalse(allows(VultrumMixinPlugin.VITRAIL, "0.13.0"));
+        assertFalse(allows(VultrumMixinPlugin.VITRAIL, "0.14.0-alpha.1"), "a 0.14 pre-release is the next line");
+        assertFalse(allows(VultrumMixinPlugin.VITRAIL, "0.14.0"));
     }
 
     @Test

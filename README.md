@@ -103,7 +103,7 @@ You need a Fabric instance for Minecraft 26.3 on Java 25, with these mods:
 |---|---|---|
 | [Sodium](https://modrinth.com/mod/sodium) | 0.9.3-alpha.1 or later | required. 0.9.2 won't load with Vultrum |
 | [Fabric API](https://modrinth.com/mod/fabric-api) | 0.162.0+26.3 or later | required by Sodium |
-| [Vitrail Shaders](https://modrinth.com/mod/vitrail-shaders) | 0.12 | optional, for shader packs on Vulkan and for Vultrum's culling |
+| [Vitrail Shaders](https://modrinth.com/mod/vitrail-shaders) | 0.12 or 0.13 | optional, for shader packs on Vulkan and for Vultrum's culling |
 | Vultrum | 0.1.0-alpha.4 | from [GitHub Releases](https://github.com/DebZakari/Vultrum/releases) or [Modrinth](https://modrinth.com/mod/vultrum) |
 
 Fabric Loader 0.19.5 or later.
