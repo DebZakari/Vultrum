@@ -107,8 +107,9 @@ record Scenario(String world, long seed, boolean fullscreen, double warmupSecond
             if (server != null && (server.address() == null || server.rcon() == null || !server.rcon().matches(".+:\\d+")
                     || server.rconPassword() == null || server.rconPassword().isEmpty()))
                 throw new IllegalArgumentException("A server needs an address, an rcon host:port and an rconPassword: " + path);
-            if (!(scenario.quietBuildsSeconds() >= 0))
-                throw new IllegalArgumentException("quietBuildsSeconds can't be negative: " + path);
+            // A compile-time constant: reading it doesn't load Bench, which needs Minecraft's classes.
+            if (!(scenario.quietBuildsSeconds() >= 0 && scenario.quietBuildsSeconds() < Bench.BUILDS_TIMEOUT_S))
+                throw new IllegalArgumentException("quietBuildsSeconds must be at least 0 and under " + Bench.BUILDS_TIMEOUT_S + " s: " + path);
             for (var viewpoint : scenario.viewpoints()) {
                 validate(viewpoint);
                 if (server != null && viewpoint.locate() != null)

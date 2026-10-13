@@ -88,12 +88,16 @@ class ScenarioTest {
     }
 
     @Test
-    void quietBuildsIsOffByDefaultAndNeverNegative(@TempDir Path dir) throws IOException {
+    void quietBuildsIsOffByDefaultAndWithinTheTimeout(@TempDir Path dir) throws IOException {
         assertEquals(0, Scenario.load(write(dir, "{\"name\":\"a\",\"y\":100}")).quietBuildsSeconds());
         Path file = dir.resolve("s.json");
-        Files.writeString(file, "{\"world\":\"w\",\"quietBuildsSeconds\":-1,\"renderDistances\":[16],\"viewpoints\":[{\"name\":\"a\",\"y\":100}]}");
-        var error = assertThrows(IllegalArgumentException.class, () -> Scenario.load(file));
-        assertTrue(error.getMessage().contains("can't be negative"), error.getMessage());
+        for (String seconds : List.of("-1", "60", "90")) {
+            Files.writeString(file, "{\"world\":\"w\",\"quietBuildsSeconds\":" + seconds + ",\"renderDistances\":[16],\"viewpoints\":[{\"name\":\"a\",\"y\":100}]}");
+            var error = assertThrows(IllegalArgumentException.class, () -> Scenario.load(file), seconds);
+            assertTrue(error.getMessage().contains("quietBuildsSeconds must be"), error.getMessage());
+        }
+        Files.writeString(file, "{\"world\":\"w\",\"quietBuildsSeconds\":3,\"renderDistances\":[16],\"viewpoints\":[{\"name\":\"a\",\"y\":100}]}");
+        assertEquals(3, Scenario.load(file).quietBuildsSeconds());
     }
 
     @Test

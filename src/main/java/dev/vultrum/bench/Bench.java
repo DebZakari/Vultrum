@@ -79,7 +79,7 @@ public final class Bench {
     private static final double DRAIN_TIMEOUT_S = 2, HOLD_MIN_S = 1, HOLD_TIMEOUT_S = 10, FLY_END_TIMEOUT_S = 60, QUIT_TIMEOUT_S = 5;
     private static final double TERRAIN_MIN_S = 5;
     // The longest a case waits for Sodium's builds to go quiet (Scenario.quietBuildsSeconds), after the terrain wait.
-    private static final double BUILDS_TIMEOUT_S = 60;
+    static final double BUILDS_TIMEOUT_S = 60;
     // A flight goes on this long after recording should end, so recording never sees it stop.
     private static final double FLY_OVERRUN_S = 1;
     private static final int STABLE_TICKS = 60, MAX_ATTEMPTS = 3;
@@ -351,7 +351,7 @@ public final class Bench {
                 // Ticking is frozen, so no block or light change asks for a build: what's left is the walk's own.
                 var renderer = SodiumWorldRenderer.instanceNullable();
                 boolean quiet = Builds.quietSeconds() >= scenario.quietBuildsSeconds() && renderer != null && renderer.isTerrainRenderComplete();
-                buildsTimedOut = seconds() > BUILDS_TIMEOUT_S;
+                buildsTimedOut = !quiet && seconds() > BUILDS_TIMEOUT_S;
                 if (quiet || buildsTimedOut) {
                     buildsWaitS = seconds();
                     if (buildsTimedOut) VultrumClient.LOGGER.warn("[bench] {} builds not quiet after {} s", cases.get(caseIndex).id(), BUILDS_TIMEOUT_S);

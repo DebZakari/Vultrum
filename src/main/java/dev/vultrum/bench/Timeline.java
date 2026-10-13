@@ -39,6 +39,7 @@ public final class Timeline {
     public static void deferred(boolean on) { deferred = on; }
 
     public static void submitted(int x, int y, int z, int type) {
+        if (!ON) return;
         event("submit", x, y, z, type + (deferred ? ";deferred" : ";important"));
     }
 
