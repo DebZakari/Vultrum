@@ -117,6 +117,24 @@ class EvidenceTest(unittest.TestCase):
         b.results["cases"][0]["occlusionCull"]["broken"] = True
         self.assertFalse(assess(a, b).eligible)
 
+    def test_static_views_recorded_while_building_are_excluded(self):
+        a, b = self.run_file(), self.run_file()
+        b.results["cases"][0]["builds"] = {"record": 0}
+        self.assertTrue(assess(a, b).eligible)
+        b.results["cases"][0]["builds"] = {"record": 12}
+        self.assertTrue(any("section builds while recording" in reason for reason in assess(a, b).exclusions))
+        # A sweep or a flight builds as it goes.
+        for run in (a, b):
+            run.results["scenario"]["viewpoints"] = [{"name": "view", "fly": {"speed": 10}}]
+        self.assertTrue(assess(a, b).eligible)
+
+    def test_scenario_fields_added_later_read_as_their_default(self):
+        a, b = self.run_file(), self.run_file()
+        b.results["scenario"]["quietBuildsSeconds"] = 0.0
+        self.assertTrue(assess(a, b).eligible)
+        b.results["scenario"]["quietBuildsSeconds"] = 3.0
+        self.assertFalse(assess(a, b).eligible)
+
     def test_unknown_recording_flags_do_not_count_as_false(self):
         a, b = self.run_file(), self.run_file()
         b.results["cases"][0]["moved"] = None

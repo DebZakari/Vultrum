@@ -16,6 +16,8 @@ from vitrail_log import SHADOW_TERRAIN, TERRAIN, pass_timings
 
 # A conservative back-to-back/interleaved session policy, including launcher time.
 MAX_IDLE_SECONDS = 15 * 60
+# Scenario fields the harness writes with a default, as older runs had them without writing them.
+SCENARIO_DEFAULTS = {"quietBuildsSeconds": 0.0}
 
 
 def get(value, path):
@@ -78,6 +80,9 @@ class Run:
         result = self.results
         keys = ("scenario", "device", "framebuffer", "options", "mods", "java", "sodiumBackend", "reclaimThread")
         identity = {key: result.get(key) for key in keys}
+        if isinstance(identity["scenario"], dict):
+            # A field added to scenarios later reads as its default in runs made before it.
+            identity["scenario"] = {**SCENARIO_DEFAULTS, **identity["scenario"]}
         args = result.get("jvmArgs")
         properties, flags = {}, []
         if args is not None:
@@ -150,6 +155,11 @@ class Run:
             reasons.append("missing or duplicate cases")
         if "join" in result and result["join"] is not None and result["join"].get("complete") is not True:
             reasons.append("join incomplete or unknown")
+        # Case ids are a viewpoint's name and its render distance; a sweep or a flight builds as it goes.
+        viewpoints = get(result, ("scenario", "viewpoints")) or []
+        moving_names = {view.get("name") for view in viewpoints
+                        if isinstance(view, dict) and (view.get("motion") or view.get("fly"))}
+        moving = {case.get("id") for case in cases if str(case.get("id")).rpartition("-rd")[0] in moving_names}
         for case in cases:
             prefix = f"{case['id']}: "
             if get(case, ("load", "complete")) is not True:
@@ -165,6 +175,9 @@ class Run:
             for key in ("position", "loadedChunks", "visibleSections"):
                 if case.get(key) is None:
                     reasons.append(prefix + f"missing identity: {key}")
+            # A static view recorded while Sodium still builds sections the next launch may have built already.
+            if case["id"] not in moving and get(case, ("builds", "record")) not in (None, 0):
+                reasons.append(prefix + "section builds while recording (set quietBuildsSeconds)")
             if type(case.get("unfocused")) is not bool:
                 reasons.append(prefix + "focus state unknown")
             elif case["unfocused"] and not (allow_uncapped_unfocused and self._uncapped_background()):
