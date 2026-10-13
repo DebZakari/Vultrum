@@ -47,4 +47,23 @@ class VultrumMixinPluginTest {
         assertFalse(allows(VultrumMixinPlugin.VITRAIL, "0.13.0-beta.1"));
         assertFalse(allows(VultrumMixinPlugin.VITRAIL, "0.13.0"));
     }
+
+    @Test
+    void timelineModesApplyTheirHooks() {
+        var chunk = "dev.vultrum.mixin.ClientChunkTimelineMixin";
+        var storage = "dev.vultrum.mixin.ClientChunkStorageTimelineMixin";
+        var light = "dev.vultrum.mixin.ClientChunkLightTimelineMixin";
+        var lightData = "dev.vultrum.mixin.ClientLightTimelineMixin";
+        var dirty = "dev.vultrum.mixin.SodiumDirtyTimelineMixin";
+        var other = "dev.vultrum.mixin.GameRendererMixin";
+        for (var mixin : new String[] {chunk, storage, light, lightData, dirty, other})
+            assertTrue(VultrumMixinPlugin.timelineApplies(mixin, true, true), "full: " + mixin);
+        for (var mixin : new String[] {chunk, storage, other})
+            assertTrue(VultrumMixinPlugin.timelineApplies(mixin, true, false), "chunks: " + mixin);
+        for (var mixin : new String[] {light, lightData, dirty})
+            assertFalse(VultrumMixinPlugin.timelineApplies(mixin, true, false), "chunks: " + mixin);
+        for (var mixin : new String[] {chunk, storage, light, lightData, dirty})
+            assertFalse(VultrumMixinPlugin.timelineApplies(mixin, false, false), "off: " + mixin);
+        assertTrue(VultrumMixinPlugin.timelineApplies(other, false, false), "off: " + other);
+    }
 }

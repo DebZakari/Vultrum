@@ -42,9 +42,10 @@ public final class VultrumMixinPlugin implements IMixinConfigPlugin {
             "dev.vultrum.mixin.SodiumNativeBufferMixin", "dev.vultrum.mixin.SodiumBuildSubmitMixin");
     /** The diagnostic timeline's hooks (Timeline), applied only to benchmark runs that ask for it with -Dvultrum.bench.timeline=true or chunks. */
     private static final Set<String> TIMELINE_ONLY = Set.of("dev.vultrum.mixin.ClientChunkTimelineMixin", "dev.vultrum.mixin.ClientChunkStorageTimelineMixin", "dev.vultrum.mixin.ClientLightTimelineMixin",
-            "dev.vultrum.mixin.SodiumDirtyTimelineMixin");
+            "dev.vultrum.mixin.ClientChunkLightTimelineMixin", "dev.vultrum.mixin.SodiumDirtyTimelineMixin");
     /** The timeline's light and dirty-mark hooks, left out of its chunk-only mode: the dirty marks walk the stack. */
-    private static final Set<String> TIMELINE_FULL_ONLY = Set.of("dev.vultrum.mixin.ClientLightTimelineMixin", "dev.vultrum.mixin.SodiumDirtyTimelineMixin");
+    private static final Set<String> TIMELINE_FULL_ONLY = Set.of("dev.vultrum.mixin.ClientLightTimelineMixin", "dev.vultrum.mixin.ClientChunkLightTimelineMixin",
+            "dev.vultrum.mixin.SodiumDirtyTimelineMixin");
 
     // Not VultrumClient.LOGGER: mixin plugins load before mod initialisation, and that class needn't load this early.
     private static final Logger LOGGER = LoggerFactory.getLogger("Vultrum");
@@ -86,9 +87,14 @@ public final class VultrumMixinPlugin implements IMixinConfigPlugin {
             String scenario = System.getProperty("vultrum.bench");
             if (scenario == null || scenario.isBlank()) return false;
         }
-        if (TIMELINE_ONLY.contains(mixinClassName) && !Timeline.ON) return false;
-        if (TIMELINE_FULL_ONLY.contains(mixinClassName) && !Timeline.FULL) return false;
+        if (!timelineApplies(mixinClassName, Timeline.ON, Timeline.FULL)) return false;
         return supports(targetClassName);
+    }
+
+    /** Whether a mixin applies in the timeline's mode: a timeline hook only with it on, a light or dirty-mark hook only in full. */
+    static boolean timelineApplies(String mixinClassName, boolean on, boolean full) {
+        if (TIMELINE_FULL_ONLY.contains(mixinClassName)) return full;
+        return on || !TIMELINE_ONLY.contains(mixinClassName);
     }
 
     @Override public String getRefMapperConfig() { return null; }

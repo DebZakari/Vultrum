@@ -2,17 +2,15 @@ package dev.vultrum.mixin;
 
 import dev.vultrum.bench.Timeline;
 import net.minecraft.client.multiplayer.ClientChunkCache;
-import net.minecraft.core.SectionPos;
 import net.minecraft.network.protocol.game.ClientboundLevelChunkPacketData;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.LightLayer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/** Bench only (see VultrumMixinPlugin): the chunks the client loads and drops and its light changes, for {@link Timeline}. */
+/** Bench only (see VultrumMixinPlugin): the chunks the client loads and drops, for {@link Timeline}. */
 @Mixin(ClientChunkCache.class)
 abstract class ClientChunkTimelineMixin {
     // At return: the client ignores a chunk outside its storage range, and returns null for it.
@@ -31,10 +29,5 @@ abstract class ClientChunkTimelineMixin {
     @Inject(method = "updateViewCenter", at = @At("HEAD"))
     private void vultrum$center(int x, int z, CallbackInfo ci) {
         Timeline.event("center", x, 0, z, "");
-    }
-
-    @Inject(method = "onLightUpdate", at = @At("HEAD"))
-    private void vultrum$light(LightLayer layer, SectionPos pos, CallbackInfo ci) {
-        if (Timeline.FULL) Timeline.event("light", pos.x(), pos.y(), pos.z(), layer.name());
     }
 }
