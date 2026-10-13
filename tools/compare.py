@@ -60,6 +60,8 @@ METRICS = [
     ("reclaim thread ms max", ("reclaimThread", "maxMs"), None),
     ("reclaim thread refs", ("reclaimThread", "refs"), None),
     ("long setups", ("longSetupCount",), False),
+    ("builds while recording", ("builds", "record"), None),
+    ("builds quiet wait s", ("builds", "quietWaitS"), None),
     ("load s", ("load", "seconds"), False),
     ("load frame ms max", ("load", "frameMs", "max"), False),
     ("load hitches", ("load", "hitches"), False),
