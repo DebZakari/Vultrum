@@ -23,4 +23,6 @@ final class CullFaults {
         if (at.equals(point) && remaining > 0 && --remaining == 0)
             throw new IllegalStateException("injected cull failure at " + at);
     }
+
+    boolean checkRecovery() { return point.equals("check-recovery"); }
 }

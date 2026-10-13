@@ -110,6 +110,7 @@ public final class GpuOcclusionCull {
     private static String fallback = CULL ? null : launchReason();
     private static final CullFaults faults = CullFaults.read(FabricLoader.getInstance().getGameDir().resolve("vultrum/cull-failure"),
             System.getProperty("vultrum.bench") != null);
+    private static boolean recoveryChecked;
 
     private static CullCounters totals = CullCounters.ZERO;
     private static long statFrames, statPrepares, statCulls;
@@ -219,6 +220,10 @@ public final class GpuOcclusionCull {
             // Also ends the terrain pass Vitrail holds open and suspends its level pass.
             encoder.writeToBuffer(resources.frame.slice(0, bytes), resources.upload);
             if (access.vultrum$currentRenderPass() != null) throw unavailable("runtime failure: render pass still open before phase 1");
+            if (faults.checkRecovery() && !recoveryChecked) {
+                recoveryChecked = true;
+                CullRecoveryCheck.record(device, vk, depth, pipelines);
+            }
             ring = ((VulkanGpuBuffer) ((VKIndirectContext) preparation.context).mappedView.slice().buffer()).vkBuffer();
             slot = culls % READBACK_SLOTS;
             faults.hit("before-phase1");
@@ -425,7 +430,7 @@ public final class GpuOcclusionCull {
                 VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_READ_BIT);
     }
 
-    private static void barrier(VkCommandBuffer commands, MemoryStack stack, long srcStage, long srcAccess, long dstStage, long dstAccess) {
+    static void barrier(VkCommandBuffer commands, MemoryStack stack, long srcStage, long srcAccess, long dstStage, long dstAccess) {
         var barrier = VkMemoryBarrier2.calloc(1, stack).sType$Default()
                 .srcStageMask(srcStage).srcAccessMask(srcAccess).dstStageMask(dstStage).dstAccessMask(dstAccess);
         KHRSynchronization2.vkCmdPipelineBarrier2KHR(commands, VkDependencyInfo.calloc(stack).sType$Default().pMemoryBarriers(barrier));
@@ -433,6 +438,10 @@ public final class GpuOcclusionCull {
 
     private static void pushDescriptors(VkCommandBuffer commands, MemoryStack stack, long ring, VulkanGpuTextureView depth) {
         long[] buffers = {vkBuffer(resources.frame), ring, vkBuffer(resources.visibility), vkBuffer(resources.hiz), vkBuffer(resources.counters), vkBuffer(resources.phase1)};
+        descriptors(commands, stack, pipelines.layout, buffers, depth);
+    }
+
+    static void descriptors(VkCommandBuffer commands, MemoryStack stack, long layout, long[] buffers, VulkanGpuTextureView depth) {
         var writes = VkWriteDescriptorSet.calloc(buffers.length + 1, stack);
         for (int i = 0; i < buffers.length; i++) {
             writes.get(i).sType$Default().dstBinding(i).descriptorCount(1).descriptorType(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
@@ -440,7 +449,7 @@ public final class GpuOcclusionCull {
         }
         writes.get(buffers.length).sType$Default().dstBinding(buffers.length).descriptorCount(1).descriptorType(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
                 .pImageInfo(VkDescriptorImageInfo.calloc(1, stack).imageView(depth.vkImageView()).imageLayout(VK_IMAGE_LAYOUT_GENERAL));
-        KHRPushDescriptor.vkCmdPushDescriptorSetKHR(commands, VK_PIPELINE_BIND_POINT_COMPUTE, pipelines.layout, 0, writes);
+        KHRPushDescriptor.vkCmdPushDescriptorSetKHR(commands, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 0, writes);
     }
 
     private static void pushMode(VkCommandBuffer commands, MemoryStack stack, int mode, int level) {
