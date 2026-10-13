@@ -2,6 +2,12 @@
 
 What each release changed, for players. Newest first. Downloads are on [GitHub](https://github.com/DebZakari/Vultrum/releases) and [Modrinth](https://modrinth.com/mod/vultrum).
 
+## 0.1.0-alpha.5 (2026-10-14)
+
+- Vultrum's culling now works with Vitrail 0.13. With Vitrail 0.13 installed, earlier versions greyed out the Culling settings and left the culling off.
+
+This is a compatibility update. Settings and defaults are unchanged. Checked on the RTX 3090 with Vitrail 0.13.0-beta; other GPUs remain untested.
+
 ## 0.1.0-alpha.4 (2026-10-13)
 
 - Improved recovery from GPU Occlusion Culling failures, preserving terrain and transparent blocks before falling back to ordinary drawing for the rest of the session.

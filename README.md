@@ -26,7 +26,7 @@
 </p>
 
 > [!NOTE]
-> Vultrum is in alpha. Version 0.1.0-alpha.4 has been tested on one PC: Windows 11, an NVIDIA RTX 3090 and a Ryzen 5 5600X. If something breaks or looks wrong, please [open an issue](https://github.com/DebZakari/Vultrum/issues) and say which GPU you have.
+> Vultrum is in alpha. Version 0.1.0-alpha.5 has been tested on one PC: Windows 11, an NVIDIA RTX 3090 and a Ryzen 5 5600X. If something breaks or looks wrong, please [open an issue](https://github.com/DebZakari/Vultrum/issues) and say which GPU you have.
 
 ## What it does
 
@@ -104,11 +104,11 @@ You need a Fabric instance for Minecraft 26.3 on Java 25, with these mods:
 | [Sodium](https://modrinth.com/mod/sodium) | 0.9.3-alpha.1 or later | required. 0.9.2 won't load with Vultrum |
 | [Fabric API](https://modrinth.com/mod/fabric-api) | 0.162.0+26.3 or later | required by Sodium |
 | [Vitrail Shaders](https://modrinth.com/mod/vitrail-shaders) | 0.12 or 0.13 | optional, for shader packs on Vulkan and for Vultrum's culling |
-| Vultrum | 0.1.0-alpha.4 | from [GitHub Releases](https://github.com/DebZakari/Vultrum/releases) or [Modrinth](https://modrinth.com/mod/vultrum) |
+| Vultrum | 0.1.0-alpha.5 | from [GitHub Releases](https://github.com/DebZakari/Vultrum/releases) or [Modrinth](https://modrinth.com/mod/vultrum) |
 
 Fabric Loader 0.19.5 or later.
 
-<a id="vitrail"></a>For shader packs you can use Vitrail from Modrinth, or [Vultrum's build of Vitrail](https://github.com/DebZakari/vitrail-shaders/releases/tag/0.12.0-beta.vultrum.3). It's the build Vultrum is tested with: Vitrail 0.12.0-beta, plus fixes for block-breaking cracks and player names hidden by terrain under a shader pack, and faster drawing of mobs and chests. It replaces Vitrail in your `mods` folder. If something goes wrong with it, report it on [Vultrum's issues](https://github.com/DebZakari/Vultrum/issues), not Vitrail's.
+<a id="vitrail"></a>For shader packs you can use Vitrail from Modrinth, or [Vultrum's build of Vitrail](https://github.com/DebZakari/vitrail-shaders/releases/tag/0.13.0-beta.vultrum.1). It's the build Vultrum is tested with: Vitrail 0.13.0-beta, plus faster drawing of mobs and chests. It replaces Vitrail in your `mods` folder. If something goes wrong with it, report it on [Vultrum's issues](https://github.com/DebZakari/Vultrum/issues), not Vitrail's.
 
 What changed in each version is in the [changelog](CHANGELOG.md).
 
