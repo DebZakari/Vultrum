@@ -120,6 +120,8 @@ public final class Bench {
     private int loadTicks, loadStreakFrames, loadStreakPending, targetChunkX, targetChunkZ;
     private Map<String, Object> loadStreakBudget;
     private double joinLevelS = -1;
+    // When the join's load ended, while its terrain settles before the first case; -1 otherwise.
+    private long settleStart = -1;
     private Screen worldWaitScreen;
     // The current case's load (kept from its first attempt) and the join's. Null until measured.
     private Map<String, Object> caseLoad, join;
@@ -247,12 +249,23 @@ public final class Bench {
                         join.put("terrainS", load.remove("seconds"));
                         join.putAll(load);
                         VultrumClient.LOGGER.info("[bench] join {}", join);
+                        settleStart = System.nanoTime();
                     }
-                    // The join ends on the inner disc, as every load does, while the server still sends the outer ring. The
-                    // first case's teleport would race it: the client keeps counting the old disc's chunks it can no longer
-                    // drop (out of range, never drawn), so how much of the ring had arrived would change loadedChunks.
-                    if (join != null && (terrainSettled(mc, mc.options.renderDistance().get()) || seconds() > TERRAIN_TIMEOUT_S)) {
-                        if (seconds() > TERRAIN_TIMEOUT_S) VultrumClient.LOGGER.warn("[bench] terrain not settled {} s after opening the world", TERRAIN_TIMEOUT_S);
+                    if (settleStart >= 0) {
+                        // The join ends on the inner disc, as every load does, while the server still sends the outer ring.
+                        // The first case's teleport would race it: the client keeps counting the old disc's chunks it can no
+                        // longer drop (out of range, never drawn), so how much of the ring had arrived would change loadedChunks.
+                        double settleS = (System.nanoTime() - settleStart) / 1e9;
+                        boolean settled = terrainSettled(mc, mc.options.renderDistance().get());
+                        if (settled || settleS > TERRAIN_TIMEOUT_S) {
+                            if (!settled) VultrumClient.LOGGER.warn("[bench] join's terrain not settled {} s after it loaded", TERRAIN_TIMEOUT_S);
+                            join.put("settleS", round(settleS));
+                            join.put("settleTimedOut", !settled);
+                            settleStart = -1;
+                            enter(Phase.PREPARE);
+                        }
+                    } else if (join != null && seconds() > 2) {
+                        // A rejoin (a before action) moves on as it always has: its scenarios check robustness, not chunk counts.
                         enter(Phase.PREPARE);
                     }
                 } else {
