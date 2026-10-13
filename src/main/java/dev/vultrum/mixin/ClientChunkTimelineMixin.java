@@ -21,8 +21,8 @@ abstract class ClientChunkTimelineMixin {
         Timeline.event("load", x, 0, z, cir.getReturnValue() != null ? "" : "ignored");
     }
 
-    // An attempt: dropping a chunk the client doesn't hold changes nothing. Loads and drops don't replay into the
-    // client's chunk count exactly: read getLoadedChunksCount for that.
+    // An attempt: dropping a chunk the client doesn't hold changes nothing. Loads and drops are the server's packets;
+    // what the client holds is the storage's add and remove events (ClientChunkStorageTimelineMixin).
     @Inject(method = "drop", at = @At("HEAD"))
     private void vultrum$drop(ChunkPos pos, CallbackInfo ci) {
         Timeline.event("drop", pos.x(), 0, pos.z(), "");

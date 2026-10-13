@@ -162,6 +162,7 @@ public final class Bench {
         Path out = Path.of(System.getProperty("vultrum.bench.out",
                 FabricLoader.getInstance().getGameDir().resolve("vultrum-bench").resolve(label).toString()));
         instance = new Bench(scenario, out.toAbsolutePath(), label);
+        Timeline.open(instance.out);
         // The visual check shows the occlusion cull wherever it could run, not only where its gate has it on.
         if (scenario.visualCheck()) GpuOcclusionCull.override(true);
         FrameTimer.enable();
@@ -348,13 +349,13 @@ public final class Bench {
                 }
             }
             case WAIT_BUILDS -> {
-                // Ticking is frozen, so no block or light change asks for a build: what's left is the walk's own.
-                var renderer = SodiumWorldRenderer.instanceNullable();
-                boolean quiet = Builds.quietSeconds() >= scenario.quietBuildsSeconds() && renderer != null && renderer.isTerrainRenderComplete();
+                // Ticking is frozen, so no block or light change asks for a build: what's left is the walk's own. The
+                // terrain must still be settled at its end: a chunk that arrives or goes meanwhile starts its count over.
+                boolean quiet = terrainSettled(mc) && Builds.quietSeconds() >= scenario.quietBuildsSeconds();
                 buildsTimedOut = !quiet && seconds() > BUILDS_TIMEOUT_S;
                 if (quiet || buildsTimedOut) {
                     buildsWaitS = seconds();
-                    if (buildsTimedOut) VultrumClient.LOGGER.warn("[bench] {} builds not quiet after {} s", cases.get(caseIndex).id(), BUILDS_TIMEOUT_S);
+                    if (buildsTimedOut) VultrumClient.LOGGER.warn("[bench] {} builds or terrain not quiet after {} s", cases.get(caseIndex).id(), BUILDS_TIMEOUT_S);
                     startWarmup(mc);
                 }
             }
@@ -399,9 +400,7 @@ public final class Bench {
                         cleanUp(mc);
                         enter(Phase.PLACE);
                     } else {
-                        raiseIfUnfocused(mc);
-                        buildsAtWarmup = Builds.count();
-                        enter(Phase.WARMUP);
+                        warmUp(mc);
                     }
                     return;
                 }
@@ -486,13 +485,18 @@ public final class Bench {
 
     /** Ticking is frozen: starts the case's warm-up, and its camera motion if it has one. */
     private void startWarmup(Minecraft mc) {
-        raiseIfUnfocused(mc);
         var viewpoint = cases.get(caseIndex).viewpoint();
         if (viewpoint.motion() != null || viewpoint.fly() != null) {
             anchor = pose(mc);
             sweepStart = System.nanoTime();
             sweep = viewpoint.fly() != null ? Sweep.FLYING : Sweep.MOVING;
         }
+        warmUp(mc);
+    }
+
+    /** Enters a warm-up, the case's first or one before a re-recording, with what each of them resets. */
+    private void warmUp(Minecraft mc) {
+        raiseIfUnfocused(mc);
         buildsAtWarmup = Builds.count();
         enter(Phase.WARMUP);
     }
@@ -1070,9 +1074,13 @@ public final class Bench {
             Files.createDirectories(out);
             Files.writeString(out.resolve("results.json"), new GsonBuilder().setPrettyPrinting().serializeNulls().create().toJson(root));
             VultrumClient.LOGGER.info("[bench] wrote {} ({})", out.resolve("results.json"), status);
-            Timeline.write(out);
         } catch (IOException e) {
             VultrumClient.LOGGER.error("[bench] cannot write results", e);
+        }
+        try {
+            Timeline.write(out);
+        } catch (IOException e) {
+            VultrumClient.LOGGER.error("[bench] cannot write the timeline", e);
         }
     }
 

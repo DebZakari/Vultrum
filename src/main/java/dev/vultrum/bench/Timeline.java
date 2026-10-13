@@ -1,6 +1,9 @@
 package dev.vultrum.bench;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -12,26 +15,50 @@ import java.util.stream.Collectors;
 
 /**
  * Diagnostic event log for a benchmark run started with -Dvultrum.bench.timeline=true: each section build Sodium
- * submits, each section marked dirty and the calls that marked it, each chunk the client loads or drops, each light
- * update it applies, and the benchmark's own phases. Written as timeline.csv next to results.json, with the callers
- * in timeline-callers.txt. The stack walks cost time: a timeline run is not a timing run.
+ * submits, each section marked dirty and the calls that marked it, each chunk the client loads, drops, adds to or
+ * removes from its storage, each light update it applies, and the benchmark's own phases. Streamed to timeline.csv
+ * next to results.json, with the callers in timeline-callers.txt. The stack walks cost time: a timeline run is not a
+ * timing run.
  */
 public final class Timeline {
     public static final boolean ON = System.getProperty("vultrum.bench") != null && Boolean.getBoolean("vultrum.bench.timeline");
     private static final long ORIGIN = System.nanoTime();
     private static final StackWalker WALKER = StackWalker.getInstance();
-    private static final List<String> events = new ArrayList<>();
     private static final Map<String, Integer> callers = new LinkedHashMap<>();
+    // Written as the events happen, not held: a load at RD 32 makes millions of them. Guarded by Timeline.class.
+    private static BufferedWriter csv;
+    private static IOException failure;
     // Set while Sodium submits from the walk's deferred list rather than its important sets.
     private static boolean deferred;
 
     private Timeline() {}
 
+    /** Starts timeline.csv in the run's output directory; a failure is reported by {@link #write}. */
+    static void open(Path out) {
+        if (!ON) return;
+        try {
+            Files.createDirectories(out);
+            var writer = new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(out.resolve("timeline.csv")), StandardCharsets.UTF_8), 1 << 20);
+            writer.write("ms,kind,thread,x,y,z,detail\n");
+            synchronized (Timeline.class) { csv = writer; }
+        } catch (IOException e) {
+            synchronized (Timeline.class) { failure = e; }
+        }
+    }
+
     public static void event(String kind, int x, int y, int z, String detail) {
         if (!ON) return;
-        String line = String.format(Locale.ROOT, "%.3f,%s,%s,%d,%d,%d,%s", (System.nanoTime() - ORIGIN) / 1e6, kind,
+        String line = String.format(Locale.ROOT, "%.3f,%s,%s,%d,%d,%d,%s\n", (System.nanoTime() - ORIGIN) / 1e6, kind,
                 Thread.currentThread().getName().replace(',', ' '), x, y, z, detail);
-        synchronized (events) { events.add(line); }
+        synchronized (Timeline.class) {
+            if (csv == null) return;
+            try {
+                csv.write(line);
+            } catch (IOException e) {
+                failure = e;
+                csv = null;
+            }
+        }
     }
 
     public static void mark(String what) { event("mark", 0, 0, 0, what); }
@@ -54,12 +81,13 @@ public final class Timeline {
         event("dirty", x, y, z, (important ? "important" : "normal") + ";c" + id);
     }
 
+    /** Flushes timeline.csv and writes timeline-callers.txt, or throws the first write that failed. */
     static void write(Path out) throws IOException {
         if (!ON) return;
-        List<String> lines = new ArrayList<>();
-        lines.add("ms,kind,thread,x,y,z,detail");
-        synchronized (events) { lines.addAll(events); }
-        Files.write(out.resolve("timeline.csv"), lines);
+        synchronized (Timeline.class) {
+            if (failure != null) throw failure;
+            if (csv != null) csv.flush();
+        }
         List<String> callerLines = new ArrayList<>();
         synchronized (callers) { callers.forEach((caller, id) -> callerLines.add("c" + id + " " + caller)); }
         Files.write(out.resolve("timeline-callers.txt"), callerLines);
