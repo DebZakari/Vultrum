@@ -103,7 +103,7 @@ class Run:
                         settings=self.settings, sodiumOptions=self.sodium_options, savedOptions=self.options)
         identity["meta"] = {key: (self.meta or {}).get(key) for key in ("git", "mods", "shaders", "full", "compat")}
         identity["shaderFixture"] = get(self.meta or {}, ("shaderFixture", "before"))
-        identity["cases"] = {key: {field: case.get(field) for field in ("position", "loadedChunks", "visibleSections")}
+        identity["cases"] = {key: {field: case.get(field) for field in _case_identity(case)}
                              for key, case in self.cases.items()}
         return identity
 
@@ -132,7 +132,8 @@ class Run:
                 reasons.append("shader fixture missing/invalid or changed during run")
         if any(arg.startswith("-XX:StartFlightRecording") for arg in result.get("jvmArgs") or []):
             reasons.append("JFR recording argument")
-        if any(arg in ("-Dvultrum.bench.stats=true", "-Dvitrail.shaderDebugInfo=true") or arg.startswith("-Dvultrum.bench.timeline=")
+        if any(arg in ("-Dvultrum.bench.stats=true", "-Dvitrail.shaderDebugInfo=true")
+               or (arg.startswith("-Dvultrum.bench.timeline=") and arg.partition("=")[2].lower() in ("true", "chunks"))
                for arg in result.get("jvmArgs") or []):
             reasons.append("diagnostic shader/stats/timeline argument")
         try:
@@ -172,7 +173,7 @@ class Run:
                     reasons.append(prefix + f"{key} invalid or unknown")
             if case.get("occlusionCull") is not None and get(case, ("occlusionCull", "broken")) is not False:
                 reasons.append(prefix + "cull failed or unknown")
-            for key in ("position", "loadedChunks", "visibleSections"):
+            for key in _case_identity(case):
                 if case.get(key) is None:
                     reasons.append(prefix + f"missing identity: {key}")
             # A static view recorded while Sodium still builds sections the next launch may have built already.
@@ -188,6 +189,12 @@ class Run:
         mods = {**self.results.get("mods", {}), **(self.meta or {}).get("mods", {})}
         return (self.options is not None and self.options.get("inactivityFpsLimit") == '"minimized"'
                 and not any("dynamicfps" in name.lower().replace("-", "").replace("_", "") for name in mods))
+
+
+def _case_identity(case):
+    # The loaded count also holds chunks a long teleport left out of range, so it depends on where the previous case or
+    # run left the player: a case that records the chunks in range is identified by those instead.
+    return ("position", "chunksInRange" if "chunksInRange" in case else "loadedChunks", "visibleSections")
 
 
 def _options(path):

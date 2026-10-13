@@ -1008,6 +1008,7 @@ public final class Bench {
         var renderer = SodiumWorldRenderer.instanceNullable();
         result.put("visibleSections", renderer == null ? null : renderer.getVisibleChunkCount());
         result.put("loadedChunks", mc.level.getChunkSource().getLoadedChunksCount());
+        result.put("chunksInRange", chunksInRange(mc));
         int entities = 0;
         for (var ignored : mc.level.entitiesForRendering()) entities++;
         result.put("entities", entities);
@@ -1117,6 +1118,22 @@ public final class Bench {
             for (int dz = -r; dz <= r; dz++)
                 if (dx * dx + dz * dz <= r * r && !chunks.hasChunk(center.x() + dx, center.z() + dz)) return false;
         return true;
+    }
+
+    /**
+     * The chunks the client holds in range of its view. The loaded count also holds chunks it can no longer drop: after
+     * a long teleport the server's forgets for the old disc come after its new centre, and the client ignores a drop out
+     * of range, so it keeps every old chunk no new one has replaced. How many depends on where the player came from.
+     */
+    private static int chunksInRange(Minecraft mc) {
+        var center = mc.player.chunkPosition();
+        var chunks = mc.level.getChunkSource();
+        // The client's storage reaches 3 chunks past the view distance; one more for a player a chunk off its centre.
+        int r = mc.options.renderDistance().get() + 4, count = 0;
+        for (int dx = -r; dx <= r; dx++)
+            for (int dz = -r; dz <= r; dz++)
+                if (chunks.hasChunk(center.x() + dx, center.z() + dz)) count++;
+        return count;
     }
 
     private static double[] pose(Minecraft mc) {

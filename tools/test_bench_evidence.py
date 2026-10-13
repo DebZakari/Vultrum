@@ -95,13 +95,18 @@ class EvidenceTest(unittest.TestCase):
                 changed.meta[key] = True
                 self.assertFalse(assess(a, changed).eligible)
         # Diagnostic arguments exclude both runs even when they match.
-        for arg in ("-Dvultrum.bench.stats=true", "-Dvultrum.bench.timeline=true", "-Dvultrum.bench.timeline=chunks",
-                    "-Dvitrail.shaderDebugInfo=true"):
+        for arg in ("-Dvultrum.bench.stats=true", "-Dvultrum.bench.timeline=true", "-Dvultrum.bench.timeline=TRUE",
+                    "-Dvultrum.bench.timeline=chunks", "-Dvitrail.shaderDebugInfo=true"):
             with self.subTest(arg=arg):
                 c, d = self.run_file(), self.run_file()
                 for run in (c, d):
                     run.results["jvmArgs"].append(arg)
                 self.assertTrue(any("diagnostic" in reason for reason in assess(c, d).exclusions))
+        # A timeline turned off is no diagnostic.
+        c, d = self.run_file(), self.run_file()
+        for run in (c, d):
+            run.results["jvmArgs"].append("-Dvultrum.bench.timeline=false")
+        self.assertTrue(assess(c, d).eligible)
         b.results["jvmArgs"].append("-XX:StartFlightRecording=filename=test.jfr")
         self.assertFalse(assess(a, b).eligible)
 
@@ -134,6 +139,18 @@ class EvidenceTest(unittest.TestCase):
         b.results["scenario"]["quietBuildsSeconds"] = 0.0
         self.assertTrue(assess(a, b).eligible)
         b.results["scenario"]["quietBuildsSeconds"] = 3.0
+        self.assertFalse(assess(a, b).eligible)
+
+    def test_chunks_in_range_identify_a_case_that_records_them(self):
+        # Chunks a long teleport left out of range change the loaded count, not the chunks in range.
+        a, b = self.run_file(), self.run_file()
+        for run, loaded in ((a, 20), (b, 24)):
+            run.results["cases"][0].update(loadedChunks=loaded, chunksInRange=16)
+        self.assertTrue(assess(a, b).eligible)
+        b.results["cases"][0]["chunksInRange"] = 15
+        self.assertFalse(assess(a, b).eligible)
+        # A run that has them against one that hasn't compares different counts.
+        del a.results["cases"][0]["chunksInRange"]
         self.assertFalse(assess(a, b).eligible)
 
     def test_unknown_recording_flags_do_not_count_as_false(self):
