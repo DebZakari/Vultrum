@@ -1,7 +1,7 @@
 package dev.vultrum.bench;
 
 /**
- * The section builds and sorts Sodium has submitted to its build threads in a benchmark run, from its important sets
+ * The section build and sort jobs Sodium has handed to its build threads in a benchmark run, from its important sets
  * and from its walk's deferred list, which {@code isTerrainRenderComplete} doesn't see. Render thread only.
  */
 public final class Builds {
