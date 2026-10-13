@@ -22,7 +22,9 @@ import java.util.stream.Collectors;
  * loads at their speed.
  */
 public final class Timeline {
-    private static final String MODE = System.getProperty("vultrum.bench") != null ? System.getProperty("vultrum.bench.timeline", "") : "";
+    // Read by VultrumMixinPlugin too, which applies the timeline's hooks: this class loads no game classes.
+    private static final String MODE = System.getProperty("vultrum.bench") != null
+            ? System.getProperty("vultrum.bench.timeline", "").toLowerCase(Locale.ROOT) : "";
     public static final boolean ON = MODE.equals("true") || MODE.equals("chunks");
     /** Dirty marks and light too: the timeline's full mode. */
     public static final boolean FULL = MODE.equals("true");
@@ -76,7 +78,7 @@ public final class Timeline {
 
     /** A section marked dirty, with the ten calls above Sodium's scheduleRebuildForChunk. */
     public static void dirty(int x, int y, int z, boolean important) {
-        if (!ON) return;
+        if (!FULL) return;
         String caller = WALKER.walk(frames -> frames.skip(3).limit(10)
                 .map(f -> f.getClassName().substring(f.getClassName().lastIndexOf('.') + 1) + "." + f.getMethodName())
                 .collect(Collectors.joining(" < ")));

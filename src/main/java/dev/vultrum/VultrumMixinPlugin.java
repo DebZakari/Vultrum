@@ -1,5 +1,6 @@
 package dev.vultrum;
 
+import dev.vultrum.bench.Timeline;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.Version;
 import net.fabricmc.loader.api.VersionParsingException;
@@ -85,9 +86,8 @@ public final class VultrumMixinPlugin implements IMixinConfigPlugin {
             String scenario = System.getProperty("vultrum.bench");
             if (scenario == null || scenario.isBlank()) return false;
         }
-        String timeline = System.getProperty("vultrum.bench.timeline", "");
-        if (TIMELINE_ONLY.contains(mixinClassName) && !timeline.equals("true") && !timeline.equals("chunks")) return false;
-        if (TIMELINE_FULL_ONLY.contains(mixinClassName) && !timeline.equals("true")) return false;
+        if (TIMELINE_ONLY.contains(mixinClassName) && !Timeline.ON) return false;
+        if (TIMELINE_FULL_ONLY.contains(mixinClassName) && !Timeline.FULL) return false;
         return supports(targetClassName);
     }
 
