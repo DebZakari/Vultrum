@@ -84,6 +84,7 @@ $packBytes = $null
 if (Test-Path -LiteralPath $packFile) { $packBytes = [IO.File]::ReadAllBytes($packFile) }
 . (Join-Path $PSScriptRoot 'bench-fixture.ps1')
 $shaderFixtureBefore = Get-BenchmarkShaderFixture (Join-Path $root $runDir)
+$cullValidationBefore = Get-BenchmarkCullValidation (Join-Path $root $runDir)
 $started = Get-Date
 try {
     & .\gradlew.bat @gradleArgs
@@ -109,10 +110,13 @@ if (Test-Path -LiteralPath $modsDir) {
         $mods[$jar.Name] = (Get-FileHash -Algorithm SHA256 -LiteralPath $jar.FullName).Hash.Substring(0, 12).ToLower()
     }
 }
+$cullValidationAfter = Get-BenchmarkCullValidation (Join-Path $root $runDir)
 $meta = [ordered]@{
     label = $Label; scenario = $Scenario; shaders = [bool]$Shaders; full = [bool]$Full; compat = $Compat; stats = [bool]$Stats; jfr = [bool]$Jfr; git = $sha; dirty = $dirty
     started = $started.ToString('o'); finished = $finished.ToString('o'); gradleExitCode = $exitCode; mods = $mods
     shaderFixture = [ordered]@{ version = 1; before = $shaderFixtureBefore; after = (Get-BenchmarkShaderFixture (Join-Path $root $runDir)) }
+    cullValidation = [ordered]@{ before = $cullValidationBefore; after = $cullValidationAfter }
+    diagnosticOnly = $null -ne $cullValidationBefore.fault -or $null -ne $cullValidationAfter.fault -or $cullValidationBefore.portable -or $cullValidationAfter.portable
 } | ConvertTo-Json -Depth 10
 # Windows PowerShell's -Encoding UTF8 writes a byte order mark, which breaks Python's json.load.
 [IO.File]::WriteAllText((Join-Path $out 'meta.json'), $meta, (New-Object Text.UTF8Encoding $false))

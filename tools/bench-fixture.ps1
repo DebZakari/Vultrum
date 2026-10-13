@@ -1,5 +1,13 @@
 # Snapshot shader inputs outside the measured game interval. Hash all packs,
 # including directory packs, so partial pack-name selection cannot hide a change.
+function Get-BenchmarkCullValidation([string]$RunDirectory) {
+    $fault = Join-Path $RunDirectory 'vultrum\cull-failure'
+    return [ordered]@{
+        fault = if (Test-Path -LiteralPath $fault -PathType Leaf) { [IO.File]::ReadAllText($fault) } else { $null }
+        portable = [bool](Test-Path -LiteralPath (Join-Path $RunDirectory 'vultrum\portable-compute'))
+    }
+}
+
 function Get-BenchmarkShaderFixture([string]$RunDirectory) {
     $vitrail = [ordered]@{}
     foreach ($name in @('pack.txt', 'options.txt', 'amortise-shadow', 'graphics-api.txt', 'box-shadow-cull', 'soft-shadow-compare')) {

@@ -175,6 +175,23 @@ class EvidenceTest(unittest.TestCase):
         iris.write_text("enableShaders=false")
         self.assertNotEqual(on, snapshot()["irisProperties"])
 
+    def test_harness_records_cull_validation_inputs(self):
+        shell = shutil.which("pwsh") or shutil.which("powershell")
+        if shell is None:
+            self.skipTest("PowerShell required for harness snapshot integration")
+        helper = Path(__file__).with_name("bench-fixture.ps1").resolve()
+        def snapshot():
+            command = ". '{}' ; Get-BenchmarkCullValidation '{}' | ConvertTo-Json".format(
+                str(helper).replace("'", "''"), str(self.root).replace("'", "''"))
+            return json.loads(subprocess.run([shell, "-NoProfile", "-Command", command],
+                                            capture_output=True, text=True, check=True).stdout)
+        self.assertEqual(snapshot(), {"fault": None, "portable": False})
+        directory = self.root / "vultrum"
+        directory.mkdir()
+        (directory / "cull-failure").write_text("after-phase1-draw:32")
+        (directory / "portable-compute").write_text("")
+        self.assertEqual(snapshot(), {"fault": "after-phase1-draw:32", "portable": True})
+
     def test_uncapped_unfocused_requires_verified_files_and_no_cap_mod(self):
         a, b = self.run_file(), self.run_file()
         a.results["cases"][0]["unfocused"] = b.results["cases"][0]["unfocused"] = True
