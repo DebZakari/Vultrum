@@ -35,6 +35,6 @@ abstract class ClientChunkTimelineMixin {
 
     @Inject(method = "onLightUpdate", at = @At("HEAD"))
     private void vultrum$light(LightLayer layer, SectionPos pos, CallbackInfo ci) {
-        Timeline.event("light", pos.x(), pos.y(), pos.z(), layer.name());
+        if (Timeline.FULL) Timeline.event("light", pos.x(), pos.y(), pos.z(), layer.name());
     }
 }

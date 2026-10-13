@@ -39,9 +39,11 @@ public final class VultrumMixinPlugin implements IMixinConfigPlugin {
     private static final Set<String> BENCH_ONLY = Set.of("dev.vultrum.mixin.ClientLevelMixin", "dev.vultrum.mixin.MinecraftMixin",
             "dev.vultrum.mixin.RenderSectionManagerMixin", "dev.vultrum.mixin.SodiumSetupPhasesMixin",
             "dev.vultrum.mixin.SodiumNativeBufferMixin", "dev.vultrum.mixin.SodiumBuildSubmitMixin");
-    /** The diagnostic timeline's hooks (Timeline), applied only to benchmark runs that ask for it with -Dvultrum.bench.timeline=true. */
+    /** The diagnostic timeline's hooks (Timeline), applied only to benchmark runs that ask for it with -Dvultrum.bench.timeline=true or chunks. */
     private static final Set<String> TIMELINE_ONLY = Set.of("dev.vultrum.mixin.ClientChunkTimelineMixin", "dev.vultrum.mixin.ClientChunkStorageTimelineMixin", "dev.vultrum.mixin.ClientLightTimelineMixin",
             "dev.vultrum.mixin.SodiumDirtyTimelineMixin");
+    /** The timeline's light and dirty-mark hooks, left out of its chunk-only mode: the dirty marks walk the stack. */
+    private static final Set<String> TIMELINE_FULL_ONLY = Set.of("dev.vultrum.mixin.ClientLightTimelineMixin", "dev.vultrum.mixin.SodiumDirtyTimelineMixin");
 
     // Not VultrumClient.LOGGER: mixin plugins load before mod initialisation, and that class needn't load this early.
     private static final Logger LOGGER = LoggerFactory.getLogger("Vultrum");
@@ -83,7 +85,9 @@ public final class VultrumMixinPlugin implements IMixinConfigPlugin {
             String scenario = System.getProperty("vultrum.bench");
             if (scenario == null || scenario.isBlank()) return false;
         }
-        if (TIMELINE_ONLY.contains(mixinClassName) && !Boolean.getBoolean("vultrum.bench.timeline")) return false;
+        String timeline = System.getProperty("vultrum.bench.timeline", "");
+        if (TIMELINE_ONLY.contains(mixinClassName) && !timeline.equals("true") && !timeline.equals("chunks")) return false;
+        if (TIMELINE_FULL_ONLY.contains(mixinClassName) && !timeline.equals("true")) return false;
         return supports(targetClassName);
     }
 

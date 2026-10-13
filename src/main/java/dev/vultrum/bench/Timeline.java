@@ -18,10 +18,14 @@ import java.util.stream.Collectors;
  * submits, each section marked dirty and the calls that marked it, each chunk the client loads, drops, adds to or
  * removes from its storage, each light update it applies, and the benchmark's own phases. Streamed to timeline.csv
  * next to results.json, with the callers in timeline-callers.txt. The stack walks cost time: a timeline run is not a
- * timing run.
+ * timing run. With -Dvultrum.bench.timeline=chunks it logs only the chunks, the builds and the phases, which leaves
+ * loads at their speed.
  */
 public final class Timeline {
-    public static final boolean ON = System.getProperty("vultrum.bench") != null && Boolean.getBoolean("vultrum.bench.timeline");
+    private static final String MODE = System.getProperty("vultrum.bench") != null ? System.getProperty("vultrum.bench.timeline", "") : "";
+    public static final boolean ON = MODE.equals("true") || MODE.equals("chunks");
+    /** Dirty marks and light too: the timeline's full mode. */
+    public static final boolean FULL = MODE.equals("true");
     private static final long ORIGIN = System.nanoTime();
     private static final StackWalker WALKER = StackWalker.getInstance();
     private static final Map<String, Integer> callers = new LinkedHashMap<>();

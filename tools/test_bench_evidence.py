@@ -95,7 +95,8 @@ class EvidenceTest(unittest.TestCase):
                 changed.meta[key] = True
                 self.assertFalse(assess(a, changed).eligible)
         # Diagnostic arguments exclude both runs even when they match.
-        for arg in ("-Dvultrum.bench.stats=true", "-Dvultrum.bench.timeline=true", "-Dvitrail.shaderDebugInfo=true"):
+        for arg in ("-Dvultrum.bench.stats=true", "-Dvultrum.bench.timeline=true", "-Dvultrum.bench.timeline=chunks",
+                    "-Dvitrail.shaderDebugInfo=true"):
             with self.subTest(arg=arg):
                 c, d = self.run_file(), self.run_file()
                 for run in (c, d):

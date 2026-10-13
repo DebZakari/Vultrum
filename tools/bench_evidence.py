@@ -132,7 +132,7 @@ class Run:
                 reasons.append("shader fixture missing/invalid or changed during run")
         if any(arg.startswith("-XX:StartFlightRecording") for arg in result.get("jvmArgs") or []):
             reasons.append("JFR recording argument")
-        if any(arg in ("-Dvultrum.bench.stats=true", "-Dvultrum.bench.timeline=true", "-Dvitrail.shaderDebugInfo=true")
+        if any(arg in ("-Dvultrum.bench.stats=true", "-Dvitrail.shaderDebugInfo=true") or arg.startswith("-Dvultrum.bench.timeline=")
                for arg in result.get("jvmArgs") or []):
             reasons.append("diagnostic shader/stats/timeline argument")
         try:
