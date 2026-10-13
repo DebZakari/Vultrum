@@ -155,7 +155,7 @@ class EvidenceTest(unittest.TestCase):
         def snapshot():
             command = ". '{}' ; Get-BenchmarkShaderFixture '{}' | ConvertTo-Json -Depth 10".format(
                 str(helper).replace("'", "''"), str(self.root).replace("'", "''"))
-            return json.loads(subprocess.run([shell, "-NoProfile", "-Command", command],
+            return json.loads(subprocess.run([shell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", command],
                                             capture_output=True, text=True, check=True).stdout)
         original = snapshot()
         self.assertIsNone(original["vitrail"]["amortise-shadow"])
@@ -190,7 +190,7 @@ class EvidenceTest(unittest.TestCase):
         def snapshot():
             command = ". '{}' ; Get-BenchmarkCullValidation '{}' | ConvertTo-Json".format(
                 str(helper).replace("'", "''"), str(self.root).replace("'", "''"))
-            return json.loads(subprocess.run([shell, "-NoProfile", "-Command", command],
+            return json.loads(subprocess.run([shell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", command],
                                             capture_output=True, text=True, check=True).stdout)
         self.assertEqual(snapshot(), {"fault": None, "portable": False})
         directory = self.root / "vultrum"
