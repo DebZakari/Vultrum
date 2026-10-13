@@ -248,7 +248,13 @@ public final class Bench {
                         join.putAll(load);
                         VultrumClient.LOGGER.info("[bench] join {}", join);
                     }
-                    if (join != null && seconds() > 2) enter(Phase.PREPARE);
+                    // The join ends on the inner disc, as every load does, while the server still sends the outer ring. The
+                    // first case's teleport would race it: the client keeps counting the old disc's chunks it can no longer
+                    // drop (out of range, never drawn), so how much of the ring had arrived would change loadedChunks.
+                    if (join != null && (terrainSettled(mc, mc.options.renderDistance().get()) || seconds() > TERRAIN_TIMEOUT_S)) {
+                        if (seconds() > TERRAIN_TIMEOUT_S) VultrumClient.LOGGER.warn("[bench] terrain not settled {} s after opening the world", TERRAIN_TIMEOUT_S);
+                        enter(Phase.PREPARE);
+                    }
                 } else {
                     // A prompt the bench doesn't answer (a confirm or backup screen) stalls the open: name each screen.
                     var screen = mc.gui.screen();
@@ -505,12 +511,14 @@ public final class Bench {
      * Sodium has built every column the render distance holds and has no column left waiting to be removed, and the
      * loaded-chunk count has been stable for {@link #STABLE_TICKS}. Call it once a tick: it counts the stable ticks.
      */
-    private boolean terrainSettled(Minecraft mc) {
+    private boolean terrainSettled(Minecraft mc) { return terrainSettled(mc, cases.get(caseIndex).renderDistance()); }
+
+    private boolean terrainSettled(Minecraft mc, int renderDistance) {
         int loaded = mc.level.getChunkSource().getLoadedChunksCount();
         stableTicks = loaded == lastLoaded ? stableTicks + 1 : 0;
         lastLoaded = loaded;
         var renderer = SodiumWorldRenderer.instanceNullable();
-        return renderer != null && renderer.isTerrainRenderComplete() && UnloadBudget.pending() == 0 && columnsLoaded(mc, cases.get(caseIndex).renderDistance())
+        return renderer != null && renderer.isTerrainRenderComplete() && UnloadBudget.pending() == 0 && columnsLoaded(mc, renderDistance)
                 && stableTicks >= STABLE_TICKS && seconds() >= TERRAIN_MIN_S;
     }
 
