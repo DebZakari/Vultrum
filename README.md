@@ -26,7 +26,7 @@
 </p>
 
 > [!NOTE]
-> Vultrum is in alpha. Version 0.1.0-alpha.3 has been tested on one PC: Windows 11, an NVIDIA RTX 3090 and a Ryzen 5 5600X. If something breaks or looks wrong, please [open an issue](https://github.com/DebZakari/Vultrum/issues) and say which GPU you have.
+> Vultrum is in alpha. Version 0.1.0-alpha.4 has been tested on one PC: Windows 11, an NVIDIA RTX 3090 and a Ryzen 5 5600X. If something breaks or looks wrong, please [open an issue](https://github.com/DebZakari/Vultrum/issues) and say which GPU you have.
 
 ## What it does
 
@@ -104,7 +104,7 @@ You need a Fabric instance for Minecraft 26.3 on Java 25, with these mods:
 | [Sodium](https://modrinth.com/mod/sodium) | 0.9.3-alpha.1 or later | required. 0.9.2 won't load with Vultrum |
 | [Fabric API](https://modrinth.com/mod/fabric-api) | 0.162.0+26.3 or later | required by Sodium |
 | [Vitrail Shaders](https://modrinth.com/mod/vitrail-shaders) | 0.12 | optional, for shader packs on Vulkan and for Vultrum's culling |
-| Vultrum | 0.1.0-alpha.3 | from [GitHub Releases](https://github.com/DebZakari/Vultrum/releases) or [Modrinth](https://modrinth.com/mod/vultrum) |
+| Vultrum | 0.1.0-alpha.4 | from [GitHub Releases](https://github.com/DebZakari/Vultrum/releases) or [Modrinth](https://modrinth.com/mod/vultrum) |
 
 Fabric Loader 0.19.5 or later.
 
@@ -118,7 +118,7 @@ Then switch the game to Vulkan: **Options → Video Settings → Graphics API �
 
 Vultrum adds two pages to Sodium's video settings, **Culling** and **Loading**. A change is saved right away and applies the next time you start the game. Each setting's tooltip says what it does and what it was measured to do.
 
-**Culling** needs Vitrail and is greyed out without it. These settings only do something while a shader pack is on, and GPU Occlusion Culling only if a pack was on when the game started.
+**Culling** needs Vitrail and is greyed out without it. The shadow settings work while a shader pack is on. GPU Occlusion Culling needs a pack enabled when the game starts and can keep working if you switch the pack off during play.
 
 | Setting | Default | |
 |---|---|---|

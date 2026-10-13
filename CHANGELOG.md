@@ -2,6 +2,13 @@
 
 What each release changed, for players. Newest first. Downloads are on [GitHub](https://github.com/DebZakari/Vultrum/releases) and [Modrinth](https://modrinth.com/mod/vultrum).
 
+## 0.1.0-alpha.4 (2026-10-13)
+
+- Improved recovery from GPU Occlusion Culling failures, preserving terrain and transparent blocks before falling back to ordinary drawing for the rest of the session.
+- Improved cleanup when culling initialization fails or the game closes. The log now reports whether culling is active and explains why it fell back.
+
+This is a stability update. Settings and defaults are unchanged. Checked on the RTX 3090; other GPUs remain untested.
+
 ## 0.1.0-alpha.3 (2026-10-13)
 
 - Added **Spread Terrain Reloads** to the Loading page, enabled by default. It spreads already-loaded terrain registration across frames after F3+A or a render distance change, reducing reload freezes.
