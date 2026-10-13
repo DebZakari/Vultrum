@@ -56,9 +56,14 @@ import java.util.Map;
  * <p>With {@code server} ({@code address}, {@code rcon} and {@code rconPassword}), the bench joins that multiplayer
  * server instead of opening {@code world}, and runs its commands as the server's console over RCON, as it runs them as
  * the integrated server's in singleplayer. A locate needs the integrated server, so it takes none.
+ *
+ * <p>With {@code quietBuildsSeconds}, each case waits after the terrain wait, with ticking frozen, until Sodium has
+ * submitted no section build for that long, at most {@code Bench.BUILDS_TIMEOUT_S}, before its warm-up. The terrain
+ * wait sees only Sodium's build queue, not the builds its walk has found and holds back under a per-frame budget.
  */
 record Scenario(String world, long seed, boolean fullscreen, double warmupSeconds, double recordSeconds,
-                List<Integer> renderDistances, List<Viewpoint> viewpoints, boolean settingsCheck, boolean visualCheck, Server server) {
+                List<Integer> renderDistances, List<Viewpoint> viewpoints, boolean settingsCheck, boolean visualCheck, Server server,
+                double quietBuildsSeconds) {
 
     record Server(String address, String rcon, String rconPassword) { }
 
@@ -102,6 +107,8 @@ record Scenario(String world, long seed, boolean fullscreen, double warmupSecond
             if (server != null && (server.address() == null || server.rcon() == null || !server.rcon().matches(".+:\\d+")
                     || server.rconPassword() == null || server.rconPassword().isEmpty()))
                 throw new IllegalArgumentException("A server needs an address, an rcon host:port and an rconPassword: " + path);
+            if (!(scenario.quietBuildsSeconds() >= 0))
+                throw new IllegalArgumentException("quietBuildsSeconds can't be negative: " + path);
             for (var viewpoint : scenario.viewpoints()) {
                 validate(viewpoint);
                 if (server != null && viewpoint.locate() != null)

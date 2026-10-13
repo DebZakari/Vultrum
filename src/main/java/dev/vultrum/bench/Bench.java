@@ -60,7 +60,8 @@ import java.util.concurrent.CompletableFuture;
  * Scripted benchmark, driven from the client tick. Enabled by -Dvultrum.bench=<scenario.json>.
  * It opens (or creates) the scenario world, locates the biomes and structures the viewpoints ask for,
  * then for each render distance and viewpoint it teleports,
- * waits for terrain to finish, freezes ticking, warms up, records frames and takes a screenshot.
+ * waits for terrain to finish, freezes ticking, waits for Sodium's builds to go quiet if the scenario asks,
+ * warms up, records frames and takes a screenshot.
  * Viewpoints with motion sweep the camera while warming up and recording, then hold pose A, jump to
  * pose B and take the screenshot there. Flying viewpoints fly straight ahead and take it at the end of
  * the route. Setup commands run once the camera is placed, cleanup commands once the case is done, and a viewpoint's
@@ -71,12 +72,14 @@ import java.util.concurrent.CompletableFuture;
  * Finally it writes results.json and quits the game.
  */
 public final class Bench {
-    private enum Phase { WAIT_TITLE, WAIT_WORLD, PREPARE, LOCATE, PLACE, REJOIN, WAIT_COLUMN, WAIT_TERRAIN, WARMUP, RECORD, DRAIN, HOLD_A, HOLD_B, VISUAL, SETTINGS, QUIT }
+    private enum Phase { WAIT_TITLE, WAIT_WORLD, PREPARE, LOCATE, PLACE, REJOIN, WAIT_COLUMN, WAIT_TERRAIN, WAIT_BUILDS, WARMUP, RECORD, DRAIN, HOLD_A, HOLD_B, VISUAL, SETTINGS, QUIT }
     private enum Sweep { OFF, MOVING, AT_A, AT_B, FLYING }
 
     private static final double WORLD_TIMEOUT_S = 600, LOCATE_TIMEOUT_S = 300, COLUMN_TIMEOUT_S = 120, TERRAIN_TIMEOUT_S = 300;
     private static final double DRAIN_TIMEOUT_S = 2, HOLD_MIN_S = 1, HOLD_TIMEOUT_S = 10, FLY_END_TIMEOUT_S = 60, QUIT_TIMEOUT_S = 5;
     private static final double TERRAIN_MIN_S = 5;
+    // The longest a case waits for Sodium's builds to go quiet (Scenario.quietBuildsSeconds), after the terrain wait.
+    private static final double BUILDS_TIMEOUT_S = 60;
     // A flight goes on this long after recording should end, so recording never sees it stop.
     private static final double FLY_OVERRUN_S = 1;
     private static final int STABLE_TICKS = 60, MAX_ATTEMPTS = 3;
@@ -101,8 +104,10 @@ public final class Bench {
     // actionsDone: the current case's before actions run so far. A rejoin leaves the world and comes back to the next.
     private int caseIndex, attempt, stableTicks, lastLoaded = -1, actionsDone;
     // unfocused: the window hadn't focus when recording started, which a re-recording can't change (see focused).
-    private boolean focusLost, unfocused, moved, terrainTimedOut;
-    private double terrainWaitS;
+    private boolean focusLost, unfocused, moved, terrainTimedOut, buildsTimedOut;
+    private double terrainWaitS, buildsWaitS;
+    // Sodium's build submissions (Builds) when warm-up and recording started, and during recording.
+    private long buildsAtWarmup, buildsAtRecord, buildsRecorded;
     private double[] pose;
     private BlockPos origin;
     private Map<String, Object> cullStats, packetStats;
@@ -336,14 +341,21 @@ public final class Bench {
                 if (settled || terrainTimedOut) {
                     terrainWaitS = seconds();
                     command(mc, "tick freeze");
-                    raiseIfUnfocused(mc);
-                    var viewpoint = cases.get(caseIndex).viewpoint();
-                    if (viewpoint.motion() != null || viewpoint.fly() != null) {
-                        anchor = pose(mc);
-                        sweepStart = System.nanoTime();
-                        sweep = viewpoint.fly() != null ? Sweep.FLYING : Sweep.MOVING;
-                    }
-                    enter(Phase.WARMUP);
+                    buildsWaitS = 0;
+                    buildsTimedOut = false;
+                    if (scenario.quietBuildsSeconds() > 0) enter(Phase.WAIT_BUILDS);
+                    else startWarmup(mc);
+                }
+            }
+            case WAIT_BUILDS -> {
+                // Ticking is frozen, so no block or light change asks for a build: what's left is the walk's own.
+                var renderer = SodiumWorldRenderer.instanceNullable();
+                boolean quiet = Builds.quietSeconds() >= scenario.quietBuildsSeconds() && renderer != null && renderer.isTerrainRenderComplete();
+                buildsTimedOut = seconds() > BUILDS_TIMEOUT_S;
+                if (quiet || buildsTimedOut) {
+                    buildsWaitS = seconds();
+                    if (buildsTimedOut) VultrumClient.LOGGER.warn("[bench] {} builds not quiet after {} s", cases.get(caseIndex).id(), BUILDS_TIMEOUT_S);
+                    startWarmup(mc);
                 }
             }
             case WARMUP -> {
@@ -353,6 +365,7 @@ public final class Bench {
                     pose = pose(mc);
                     FrameTimer.startRecording();
                     recordStart = System.nanoTime();
+                    buildsAtRecord = Builds.count();
                     GpuOcclusionCull.resetStats();
                     PacketBudget.resetStats();
                     ShadowRegion.resetStats();
@@ -366,6 +379,7 @@ public final class Bench {
                 if (seconds() >= scenario.recordSeconds()) {
                     FrameTimer.stopRecording();
                     recordEnd = System.nanoTime();
+                    buildsRecorded = Builds.count() - buildsAtRecord;
                     cullStats = GpuOcclusionCull.stats();
                     packetStats = PacketBudget.stats();
                     VultrumClient.LOGGER.info("[bench] record end {}", cases.get(caseIndex).id());
@@ -386,6 +400,7 @@ public final class Bench {
                         enter(Phase.PLACE);
                     } else {
                         raiseIfUnfocused(mc);
+                        buildsAtWarmup = Builds.count();
                         enter(Phase.WARMUP);
                     }
                     return;
@@ -467,6 +482,19 @@ public final class Bench {
                 if (serverCaughtUp.isDone() || seconds() > QUIT_TIMEOUT_S) stop(mc);
             }
         }
+    }
+
+    /** Ticking is frozen: starts the case's warm-up, and its camera motion if it has one. */
+    private void startWarmup(Minecraft mc) {
+        raiseIfUnfocused(mc);
+        var viewpoint = cases.get(caseIndex).viewpoint();
+        if (viewpoint.motion() != null || viewpoint.fly() != null) {
+            anchor = pose(mc);
+            sweepStart = System.nanoTime();
+            sweep = viewpoint.fly() != null ? Sweep.FLYING : Sweep.MOVING;
+        }
+        buildsAtWarmup = Builds.count();
+        enter(Phase.WARMUP);
     }
 
     /**
@@ -959,6 +987,13 @@ public final class Bench {
         for (var ignored : mc.level.entitiesForRendering()) entities++;
         result.put("entities", entities);
         result.put("terrainWaitS", round(terrainWaitS));
+        // The section builds Sodium submitted while warming up and recording, after the wait for them to go quiet.
+        var builds = new LinkedHashMap<String, Object>();
+        builds.put("quietWaitS", round(buildsWaitS));
+        builds.put("quietTimedOut", buildsTimedOut);
+        builds.put("warmup", buildsAtRecord - buildsAtWarmup);
+        builds.put("record", buildsRecorded);
+        result.put("builds", builds);
         result.put("load", caseLoad);
         result.put("terrainTimedOut", terrainTimedOut);
         result.put("focusLost", focusLost);

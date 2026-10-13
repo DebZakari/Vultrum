@@ -88,6 +88,15 @@ class ScenarioTest {
     }
 
     @Test
+    void quietBuildsIsOffByDefaultAndNeverNegative(@TempDir Path dir) throws IOException {
+        assertEquals(0, Scenario.load(write(dir, "{\"name\":\"a\",\"y\":100}")).quietBuildsSeconds());
+        Path file = dir.resolve("s.json");
+        Files.writeString(file, "{\"world\":\"w\",\"quietBuildsSeconds\":-1,\"renderDistances\":[16],\"viewpoints\":[{\"name\":\"a\",\"y\":100}]}");
+        var error = assertThrows(IllegalArgumentException.class, () -> Scenario.load(file));
+        assertTrue(error.getMessage().contains("can't be negative"), error.getMessage());
+    }
+
+    @Test
     void shippedScenariosLoad() throws IOException {
         String scenarios = System.getProperty("vultrum.scenarios");
         assumeTrue(scenarios != null, "vultrum.scenarios is set by the Gradle test task");
