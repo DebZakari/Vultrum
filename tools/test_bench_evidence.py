@@ -94,6 +94,13 @@ class EvidenceTest(unittest.TestCase):
                 changed = copy.deepcopy(b)
                 changed.meta[key] = True
                 self.assertFalse(assess(a, changed).eligible)
+        # Diagnostic arguments exclude both runs even when they match.
+        for arg in ("-Dvultrum.bench.stats=true", "-Dvultrum.bench.timeline=true", "-Dvitrail.shaderDebugInfo=true"):
+            with self.subTest(arg=arg):
+                c, d = self.run_file(), self.run_file()
+                for run in (c, d):
+                    run.results["jvmArgs"].append(arg)
+                self.assertTrue(any("diagnostic" in reason for reason in assess(c, d).exclusions))
         b.results["jvmArgs"].append("-XX:StartFlightRecording=filename=test.jfr")
         self.assertFalse(assess(a, b).eligible)
 
