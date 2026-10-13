@@ -39,6 +39,9 @@ public final class VultrumMixinPlugin implements IMixinConfigPlugin {
     private static final Set<String> BENCH_ONLY = Set.of("dev.vultrum.mixin.ClientLevelMixin", "dev.vultrum.mixin.MinecraftMixin",
             "dev.vultrum.mixin.RenderSectionManagerMixin", "dev.vultrum.mixin.SodiumSetupPhasesMixin",
             "dev.vultrum.mixin.SodiumNativeBufferMixin");
+    /** The diagnostic timeline's hooks (Timeline), applied only to benchmark runs that ask for it with -Dvultrum.bench.timeline=true. */
+    private static final Set<String> TIMELINE_ONLY = Set.of("dev.vultrum.mixin.ClientChunkTimelineMixin", "dev.vultrum.mixin.ClientLightTimelineMixin",
+            "dev.vultrum.mixin.SodiumBuildTimelineMixin", "dev.vultrum.mixin.SodiumDirtyTimelineMixin");
 
     // Not VultrumClient.LOGGER: mixin plugins load before mod initialisation, and that class needn't load this early.
     private static final Logger LOGGER = LoggerFactory.getLogger("Vultrum");
@@ -76,10 +79,11 @@ public final class VultrumMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-        if (BENCH_ONLY.contains(mixinClassName)) {
+        if (BENCH_ONLY.contains(mixinClassName) || TIMELINE_ONLY.contains(mixinClassName)) {
             String scenario = System.getProperty("vultrum.bench");
             if (scenario == null || scenario.isBlank()) return false;
         }
+        if (TIMELINE_ONLY.contains(mixinClassName) && !Boolean.getBoolean("vultrum.bench.timeline")) return false;
         return supports(targetClassName);
     }
 

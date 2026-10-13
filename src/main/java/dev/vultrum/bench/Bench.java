@@ -1035,6 +1035,7 @@ public final class Bench {
             Files.createDirectories(out);
             Files.writeString(out.resolve("results.json"), new GsonBuilder().setPrettyPrinting().serializeNulls().create().toJson(root));
             VultrumClient.LOGGER.info("[bench] wrote {} ({})", out.resolve("results.json"), status);
+            Timeline.write(out);
         } catch (IOException e) {
             VultrumClient.LOGGER.error("[bench] cannot write results", e);
         }
@@ -1085,6 +1086,7 @@ public final class Bench {
     }
 
     private void enter(Phase next) {
+        if (Timeline.ON) Timeline.mark(next + (caseIndex < cases.size() ? " " + cases.get(caseIndex).id() : ""));
         phase = next;
         phaseStart = System.nanoTime();
         stableTicks = 0;

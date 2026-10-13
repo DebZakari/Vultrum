@@ -3,7 +3,7 @@
   "package": "dev.vultrum.mixin",
   "plugin": "dev.vultrum.VultrumMixinPlugin",
   "compatibilityLevel": "JAVA_25",
-  "client": ["ClientLevelMixin", "DefaultChunkRendererMixin", "DrawBackendMixin", "FrontendGpuDeviceAccessor", "FrontendRenderPassAccessor", "GameRendererMixin", "HudAccessor", "KeyboardHandlerMixin", "MinecraftMixin",
-             "MouseHandlerMixin", "MultiDrawBatchMixin", "PacketProcessorMixin", "RenderSectionManagerMixin", "SodiumArenaSizeMixin", "SodiumChunkEventsMixin", "SodiumChunkTrackerAccessor", "SodiumColumnsMixin", "SodiumNativeBufferMixin", "SodiumReclaimThreadMixin", "SodiumSetupPhasesMixin", "SodiumWorldRendererMixin", "VKIndirectDrawBatchAccessor", "VulkanCommandEncoderAccessor", "VulkanConstMixin", "VulkanCullLifetimeMixin", "VulkanDeviceAccessor", "VulkanFeatureSetsMixin", "VitrailSodiumApiMixin", "VitrailTerrainDrawMixin", "VulkanRenderPassAccessor"],
+  "client": ["ClientChunkTimelineMixin", "ClientLevelMixin", "ClientLightTimelineMixin", "DefaultChunkRendererMixin", "DrawBackendMixin", "FrontendGpuDeviceAccessor", "FrontendRenderPassAccessor", "GameRendererMixin", "HudAccessor", "KeyboardHandlerMixin", "MinecraftMixin",
+             "MouseHandlerMixin", "MultiDrawBatchMixin", "PacketProcessorMixin", "RenderSectionManagerMixin", "SodiumArenaSizeMixin", "SodiumBuildTimelineMixin", "SodiumChunkEventsMixin", "SodiumChunkTrackerAccessor", "SodiumColumnsMixin", "SodiumDirtyTimelineMixin", "SodiumNativeBufferMixin", "SodiumReclaimThreadMixin", "SodiumSetupPhasesMixin", "SodiumWorldRendererMixin", "VKIndirectDrawBatchAccessor", "VulkanCommandEncoderAccessor", "VulkanConstMixin", "VulkanCullLifetimeMixin", "VulkanDeviceAccessor", "VulkanFeatureSetsMixin", "VitrailSodiumApiMixin", "VitrailTerrainDrawMixin", "VulkanRenderPassAccessor"],
   "injectors": { "defaultRequire": 1 }
 }
