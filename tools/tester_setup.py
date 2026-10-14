@@ -138,6 +138,10 @@ def source_check(root, profile):
                             cwd=root, capture_output=True, text=True)
     if result.returncode:
         raise ValueError('Runtime/build source differs from the pinned alpha.5 tag; use the documented tester checkout')
+    untracked = subprocess.run(['git', 'ls-files', '--others', '--exclude-standard', '--', *files],
+                               cwd=root, capture_output=True, text=True)
+    if untracked.returncode or untracked.stdout.strip():
+        raise ValueError('Untracked runtime/build files would change the tester implementation')
 
 
 def main():

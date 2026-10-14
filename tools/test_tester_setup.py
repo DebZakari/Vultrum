@@ -3,8 +3,10 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
+import subprocess
 
-from tester_setup import digest, prepare, setting_text, verify
+from tester_setup import digest, prepare, setting_text, source_check, verify
 
 
 class TesterFixtureTest(unittest.TestCase):
@@ -95,6 +97,13 @@ class TesterFixtureTest(unittest.TestCase):
             self.install()
         self.assertFalse((self.root / 'outside.txt').exists())
         self.assertEqual([], list(self.root.iterdir()))
+
+    def test_untracked_runtime_source_rejected_even_without_tracked_diff(self):
+        clean = subprocess.CompletedProcess([], 0, stdout='')
+        extra = subprocess.CompletedProcess([], 0, stdout='src/main/java/Extra.java\n')
+        with patch('tester_setup.subprocess.run', side_effect=[clean, extra]):
+            with self.assertRaisesRegex(ValueError, 'Untracked runtime/build files'):
+                source_check(self.root, {'sourceTag': 'v0.1.0-alpha.5'})
 
 
 if __name__ == '__main__':
