@@ -19,10 +19,17 @@ import time
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "docs", "images")
 
-# 0.1.0-alpha.1's series, 2026-10-12: -Shaders runs, A B B A per scenario, everything off for "without".
+# 0.1.0-alpha.5 with Vitrail 0.13.0-beta.vultrum.1, 2026-10-14: on/off/off/on after a warm-up.
+# Static views wait for quiet builds; "without" has every setting off, "with" uses the defaults.
 SERIES = {
-    "still": {"on": "*-a1-readme-s-on-*", "off": "*-a1-readme-s-off-*"},
-    "flight": {"on": "*-a1-readme-t-on-*", "off": "*-a1-readme-t-off-*"},
+    "still": {
+        "on": ["20261014-053249-review013-s-on-1", "20261014-055150-review013-s-on-4"],
+        "off": ["20261014-053910-review013-s-off-2", "20261014-054530-review013-s-off-3"],
+    },
+    "flight": {
+        "on": ["20261014-055811-review013-t-on-1", "20261014-060831-review013-t-on-4"],
+        "off": ["20261014-060136-review013-t-off-2", "20261014-060505-review013-t-off-3"],
+    },
 }
 
 THEMES = {
@@ -35,11 +42,21 @@ FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A
 LEGEND = ("Without Vultrum", "With Vultrum")
 
 
-def runs(pattern):
-    found = sorted(glob.glob(os.path.join(ROOT, "bench-runs", pattern)))
-    if not found:
-        sys.exit(f"no runs match {pattern}")
-    return [json.load(open(os.path.join(r, "results.json"), encoding="utf-8")) for r in found]
+def run_dirs(patterns):
+    """Resolve explicit run names or legacy glob patterns for charts and screenshots."""
+    if isinstance(patterns, str):
+        patterns = [patterns]
+    found = set()
+    for pattern in patterns:
+        matched = glob.glob(os.path.join(ROOT, "bench-runs", pattern))
+        if not matched:
+            sys.exit(f"no runs match {pattern}")
+        found.update(matched)
+    return sorted(found)
+
+
+def runs(patterns):
+    return [json.load(open(os.path.join(r, "results.json"), encoding="utf-8")) for r in run_dirs(patterns)]
 
 
 def mean_by_case(results, metric):

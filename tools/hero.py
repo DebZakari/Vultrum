@@ -12,7 +12,6 @@ Headless Edge draws and encodes every frame, so no image library is needed. Afte
 frame of a scene, a frame holds only the strip the divider crossed, and this script packs them into one file.
 """
 import base64
-import glob
 import html
 import json
 import os
@@ -23,7 +22,7 @@ import sys
 import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from readme_charts import FONT, ROOT, SCENES, SERIES, change, load, metric  # noqa: E402
+from readme_charts import FONT, ROOT, SCENES, SERIES, change, load, metric, run_dirs  # noqa: E402
 
 EDGE = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
 HERO = ["dark-forest-floor", "mountains", "ground-east"]
@@ -195,8 +194,8 @@ window.addEventListener('load', () => {
 """
 
 
-def screenshots(pattern, scene):
-    dirs = sorted(glob.glob(os.path.join(ROOT, "bench-runs", pattern)))
+def screenshots(patterns, scene):
+    dirs = run_dirs(patterns)
     return [p for p in (os.path.join(d, "screenshots", f"{scene}-rd{RD}.png") for d in dirs) if os.path.exists(p)]
 
 

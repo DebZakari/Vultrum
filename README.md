@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/hero.webp" alt="The same view without Vultrum on the left and with it on the right, with a divider sweeping across. Dark forest 270 to 348 FPS (+29%), snowy peaks 263 to 296 (+12%), savanna hillside 329 to 369 (+12%). Both sides look the same.">
+  <img src="docs/images/hero.webp" alt="The same view without Vultrum on the left and with it on the right, with a divider sweeping across. Dark forest 272 to 354 FPS (+30%); Snowy peaks 264 to 299 FPS (+13%); Savanna hillside 332 to 376 FPS (+13%). Both sides look the same.">
   <br>
   <sub>Left without Vultrum, right with it. The same picture, more frames.</sub>
 </p>
@@ -32,7 +32,7 @@
 
 Minecraft 26.3 can draw with Vulkan instead of OpenGL. Vultrum adds two things on top of Sodium there.
 
-**With a Vitrail shader pack**, it works out on the GPU, every frame, which terrain is hidden behind hills, trees and buildings, and skips drawing it. It also leaves block faces out of the shadow map when they can't change a shadow. Dense scenes gain the most: 29% more FPS in a dark forest at render distance 32. Terrain and shadows look the same.
+**With a Vitrail shader pack**, it works out on the GPU, every frame, which terrain is hidden behind hills, trees and buildings, and skips drawing it. It also leaves block faces out of the shadow map when they can't change a shadow. Dense scenes gain the most: 30% more FPS in a dark forest at render distance 32. Terrain and shadows look the same.
 
 **With or without shaders**, it smooths out chunk loading. Sodium does some of its loading work in bursts: a pile of new chunks from the server, the chunks that leave your view, the cleanup after Java's garbage collector runs. Vultrum spreads that work over several frames, so flying into new terrain stutters less. Alpha.3 also spreads already-loaded terrain registration across frames after F3+A or a render distance change, reducing reload freezes.
 
@@ -42,56 +42,56 @@ Inspired by [Nvidium](https://github.com/MCRcortex/nvidium) and [Vercidium's vox
 
 ## Performance
 
-In alpha.3, median peak frames during repeated terrain reloads at 32 chunks were 27–47% shorter across three comparisons on the RTX 3090. A longer comparison confirmed the improvement. Average FPS stayed essentially unchanged; the change reduces reload freezes. The FPS charts and flight results below were measured with alpha.1.
+In alpha.3, median peak frames during repeated terrain reloads at 32 chunks were 27–47% shorter across three comparisons on the RTX 3090. A longer comparison confirmed the improvement. Average FPS stayed essentially unchanged; the change reduces reload freezes. The FPS charts and flight results below were measured with alpha.5.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/fps-dark.svg">
-  <img src="docs/images/fps-light.svg" alt="Bar chart of average FPS with shaders at 32 chunks, without and with Vultrum. Dark forest 270 to 348 (+29%), snowy peaks 263 to 296 (+12%), savanna hillside 329 to 369 (+12%), jungle 307 to 341 (+11%), savanna valley 297 to 325 (+10%), village 388 to 416 (+7%), high in the sky 269 to 271 (+1%).">
+  <img src="docs/images/fps-light.svg" alt="Bar chart of average FPS with shaders at 32 chunks, without and with Vultrum. Dark forest 272 to 354 (+30%); Snowy peaks 264 to 299 (+13%); Savanna hillside 332 to 376 (+13%); Jungle 311 to 347 (+12%); Savanna valley 299 to 331 (+11%); Village 390 to 424 (+9%); High in the sky 270 to 275 (+2%).">
 </picture>
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/flight-dark.svg">
-  <img src="docs/images/flight-light.svg" alt="Bar chart of 1% low FPS while flying into new terrain, without and with Vultrum. Jungle at 32 chunks 83 to 113 (+36%), dark forest at 32 chunks 91 to 105 (+15%), jungle at 16 chunks 165 to 163 (-1%), dark forest at 16 chunks 170 to 176 (+4%).">
+  <img src="docs/images/flight-light.svg" alt="Bar chart of 1% low FPS while flying into new terrain, without and with Vultrum. Jungle at 32 chunks 87 to 107 (+24%); Dark forest at 32 chunks 88 to 104 (+17%); Jungle at 16 chunks 170 to 177 (+4%); Dark forest at 16 chunks 152 to 168 (+11%).">
 </picture>
 
-Complementary Unbound through Vitrail, 1920×1080 fullscreen, RTX 3090 and Ryzen 5 5600X, measured with Vultrum 0.1.0-alpha.1. "Without Vultrum" is the same game with all of Vultrum's settings off, which is plain Sodium and Vitrail. Every number is the mean of two runs of the benchmark in this repository ([`tools/bench.ps1`](tools/bench.ps1)).
+Complementary Unbound through Vitrail, 1920×1080 fullscreen, RTX 3090 and Ryzen 5 5600X, measured with Vultrum 0.1.0-alpha.5 and Vitrail 0.13.0-beta.vultrum.1. "Without Vultrum" is the same game with all of Vultrum's settings off, which is plain Sodium and Vitrail. Every number is the mean of two runs of the benchmark in this repository ([`tools/bench.ps1`](tools/bench.ps1)), after a discarded warm-up. Static scenes wait until terrain finishes building before recording.
 
-How much you gain depends on how much of the view is hidden. In a dark forest most of the terrain behind the first trees never gets drawn. High in the sky almost nothing is hidden, so the culling switches itself off and FPS stays where it was. At 16 chunks there's less to hide, and the gains are smaller (0 to 11%).
+How much you gain depends on how much of the view is hidden. In a dark forest most of the terrain behind the first trees never gets drawn. High in the sky almost nothing is hidden, so the culling switches itself off and FPS stays where it was. At 16 chunks there's less to hide, and the gains are smaller (0 to 13%).
 
-While flying at 32 chunks, the slowest 1% of frames got 15 to 36% faster, and the longest frame in the jungle went from 18.9 ms to 11.3 ms. At 16 chunks the difference was within the noise between runs.
+While flying at 32 chunks, 1% low FPS was 17 to 24% higher with Vultrum. These lows and the longest frames fluctuate between runs.
 
-Vitrail in these runs was [Vultrum's build of Vitrail](https://github.com/DebZakari/vitrail-shaders/releases/tag/0.12.0-beta.vultrum.3), which has a few speedups that Vitrail's own release doesn't have yet. With Vitrail from Modrinth, FPS will be somewhat lower overall.
+Vitrail in these runs was [Vultrum's build of Vitrail](https://github.com/DebZakari/vitrail-shaders/releases/tag/0.13.0-beta.vultrum.1), which has a few speedups that Vitrail's own release doesn't have yet. With Vitrail from Modrinth, FPS will be somewhat lower overall.
 
 <details>
 <summary>All numbers</summary>
 
-Standing still, 5 seconds per scene:
+Standing still, 10 seconds per scene:
 
 | Scene | Render distance | FPS without | FPS with | Change | 1% low without | 1% low with |
 |---|---:|---:|---:|---:|---:|---:|
-| Dark forest | 32 | 270 | 348 | +29% | 237 | 293 |
-| Snowy peaks | 32 | 263 | 296 | +12% | 234 | 260 |
-| Savanna hillside | 32 | 329 | 369 | +12% | 286 | 311 |
-| Jungle | 32 | 307 | 341 | +11% | 269 | 292 |
-| Savanna valley | 32 | 297 | 325 | +10% | 260 | 281 |
-| Village | 32 | 388 | 416 | +7% | 323 | 316 |
-| High in the sky | 32 | 269 | 271 | +1% | 238 | 239 |
-| Dark forest | 16 | 322 | 357 | +11% | 273 | 303 |
-| Snowy peaks | 16 | 342 | 356 | +4% | 277 | 298 |
-| Savanna hillside | 16 | 356 | 382 | +7% | 296 | 314 |
-| Jungle | 16 | 321 | 342 | +6% | 276 | 292 |
-| Savanna valley | 16 | 337 | 350 | +4% | 260 | 271 |
-| Village | 16 | 404 | 420 | +4% | 330 | 348 |
-| High in the sky | 16 | 384 | 383 | 0% | 323 | 322 |
+| Dark forest | 32 | 272 | 354 | +30% | 229 | 282 |
+| Snowy peaks | 32 | 264 | 299 | +13% | 224 | 247 |
+| Savanna hillside | 32 | 332 | 376 | +13% | 270 | 297 |
+| Jungle | 32 | 311 | 347 | +12% | 257 | 281 |
+| Savanna valley | 32 | 299 | 331 | +11% | 245 | 267 |
+| Village | 32 | 390 | 424 | +9% | 304 | 329 |
+| High in the sky | 32 | 270 | 275 | +2% | 226 | 233 |
+| Dark forest | 16 | 323 | 364 | +13% | 266 | 291 |
+| Snowy peaks | 16 | 345 | 360 | +4% | 279 | 289 |
+| Savanna hillside | 16 | 361 | 390 | +8% | 285 | 303 |
+| Jungle | 16 | 322 | 348 | +8% | 262 | 282 |
+| Savanna valley | 16 | 340 | 359 | +6% | 258 | 272 |
+| Village | 16 | 408 | 427 | +5% | 320 | 319 |
+| High in the sky | 16 | 388 | 387 | 0% | 303 | 307 |
 
-Flying straight ahead into terrain the game hasn't loaded yet:
+Flying straight ahead at 30 blocks a second for 10 seconds, into terrain the game hasn't loaded yet:
 
 | Flight | Render distance | FPS without | FPS with | 1% low without | 1% low with | 0.1% low without | 0.1% low with | Longest frame without | Longest frame with |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Jungle | 32 | 235 | 245 | 83 | 113 | 64 | 96 | 18.9 ms | 11.3 ms |
-| Dark forest | 32 | 197 | 213 | 91 | 105 | 71 | 88 | 14.7 ms | 12.2 ms |
-| Jungle | 16 | 332 | 337 | 165 | 163 | 123 | 117 | 10.4 ms | 12.1 ms |
-| Dark forest | 16 | 298 | 307 | 170 | 176 | 140 | 151 | 8.3 ms | 6.7 ms |
+| Jungle | 32 | 231 | 241 | 87 | 107 | 73 | 85 | 14.7 ms | 12.7 ms |
+| Dark forest | 32 | 195 | 210 | 88 | 104 | 66 | 87 | 16.5 ms | 13.4 ms |
+| Jungle | 16 | 326 | 334 | 170 | 177 | 140 | 152 | 8.1 ms | 6.9 ms |
+| Dark forest | 16 | 292 | 302 | 152 | 168 | 95 | 136 | 17.2 ms | 8.5 ms |
 
 </details>
 
