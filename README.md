@@ -101,12 +101,14 @@ You need a Fabric instance for Minecraft 26.3 on Java 25, with these mods:
 
 | Mod | Version | |
 |---|---|---|
-| [Sodium](https://modrinth.com/mod/sodium) | 0.9.3-alpha.1 or later | required. 0.9.2 won't load with Vultrum |
+| [Sodium](https://modrinth.com/mod/sodium) | 0.9.3, starting with alpha.1 | required. 0.9.2 won't load with Vultrum |
 | [Fabric API](https://modrinth.com/mod/fabric-api) | 0.162.0+26.3 or later | required by Sodium |
 | [Vitrail Shaders](https://modrinth.com/mod/vitrail-shaders) | 0.12 or 0.13 | optional, for shader packs on Vulkan and for Vultrum's culling |
 | Vultrum | 0.1.0-alpha.5 | from [GitHub Releases](https://github.com/DebZakari/Vultrum/releases) or [Modrinth](https://modrinth.com/mod/vultrum) |
 
 Fabric Loader 0.19.5 or later.
+
+Vultrum's Sodium integration supports versions from 0.9.3-alpha.1 up to, but excluding, 0.9.4-alpha. Unsupported versions disable the features that depend on Sodium until compatibility is checked.
 
 <a id="vitrail"></a>For shader packs you can use Vitrail from Modrinth, or [Vultrum's build of Vitrail](https://github.com/DebZakari/vitrail-shaders/releases/tag/0.13.0-beta.vultrum.1). It's the build Vultrum is tested with: Vitrail 0.13.0-beta, plus faster drawing of mobs and chests. It replaces Vitrail in your `mods` folder. If something goes wrong with it, report it on [Vultrum's issues](https://github.com/DebZakari/Vultrum/issues), not Vitrail's.
 
@@ -146,6 +148,8 @@ GPU occlusion culling automatically adapts to the GPU's compute limits, includin
 
 Tested on Vulkan together with Vitrail and Complementary Unbound, all in one instance, with no errors from Vultrum:
 
+These compatibility checks use default settings. Keep Skip Sunless Terrain off with ScalableLux; that combination has not been validated.
+
 - **Performance mods:** Lithium, FerriteCore, ImmediatelyFast, Entity Culling, More Culling, C2ME, ScalableLux, Distant Horizons, Sodium Extra, Bobby, Dynamic FPS, BadOptimizations, Krypton, Debugify, Particle Core, FastQuit and Language Reload.
 - **Other popular mods:** Xaero's Minimap and World Map, JourneyMap, AppleSkin, Zoomify, Mod Menu, YACL, Cloth Config, ViaFabricPlus, LambDynamicLights, Continuity, Entity Model Features, Entity Texture Features, 3D Skin Layers, Not Enough Animations, First-person Model, JEI, Jade, Litematica, Freecam, Mouse Tweaks, Inventory Profiles Next, Controlling, Chat Heads, Shulker Box Tooltip, Wavey Capes, Sound Physics Remastered, Presence Footsteps, BetterF3 and Visuality.
 
@@ -181,6 +185,8 @@ Open an issue with:
 ## Building
 
 `./gradlew build` with JDK 25. The jar ends up in `build/libs/`.
+
+To help test another GPU, use the [reproducible tester setup](bench/TESTING.md). It pins the shader build, pack and settings and saves results locally.
 
 ## Licence
 

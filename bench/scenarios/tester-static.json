@@ -1,0 +1,14 @@
+{
+  "world": "vultrum-bench",
+  "seed": 20261008,
+  "fullscreen": true,
+  "warmupSeconds": 3,
+  "recordSeconds": 10,
+  "quietBuildsSeconds": 3,
+  "renderDistances": [16, 32],
+  "viewpoints": [
+    { "name": "overview", "x": 0, "z": 0, "y": 230, "yaw": 135, "pitch": 30 },
+    { "name": "dark-forest-floor", "locate": "biome minecraft:dark_forest", "x": 0, "z": -48, "aboveGround": 0, "ignoreLeaves": true, "yaw": 180, "pitch": 0 },
+    { "name": "village", "locate": "structure #minecraft:village", "aboveGround": 0, "yaw": 0, "pitch": 0 }
+  ]
+}

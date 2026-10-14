@@ -1,0 +1,39 @@
+{
+  "id": "alpha5-vitrail013",
+  "sourceTag": "v0.1.0-alpha.5",
+  "minecraft": "26.3",
+  "java": 25,
+  "fabricLoader": "0.19.5",
+  "fabricApi": "0.162.0+26.3",
+  "sodium": "mc26.3-0.9.3-alpha.1-fabric",
+  "referenceFramebuffer": [1920, 1080],
+  "artifacts": [
+    {
+      "path": "mods/vitrail-0.13.0-beta.vultrum.1+mc26.3.jar",
+      "url": "https://github.com/DebZakari/vitrail-shaders/releases/download/0.13.0-beta.vultrum.1/vitrail-0.13.0-beta.vultrum.1%2Bmc26.3.jar",
+      "sha256": "ac9bd8356fc1550a76761b7116d7068cf9f8daf448f263953a24992cf358c58d"
+    },
+    {
+      "path": "shaderpacks/ComplementaryUnbound_r5.9.3.zip",
+      "url": "https://cdn.modrinth.com/data/R6NEzAwj/versions/B1kyfoUZ/ComplementaryUnbound_r5.9.3.zip",
+      "sha256": "98ac741dee294d2a3c82d153349148c3bb7fb688c30eb3b49c3b9ac37e968c5a"
+    }
+  ],
+  "settings": {
+    "shadow-face-cull": true,
+    "occlusion-cull": true,
+    "sunless-shadow": false,
+    "packet-budget": true,
+    "arena-cap": true,
+    "unload-budget": true,
+    "reclaim-thread": true,
+    "reload-registration": true
+  },
+  "files": {
+    "options.txt": "version:5023\nao:true\nbiomeBlendRadius:2\nchunkSectionFadeInTime:0.75\ncutoutLeaves:true\nenableVsync:false\nentityDistanceScaling:1.0\nentityShadows:true\nfov:0.5\nfovEffectScale:1.0\ndarknessEffectScale:1.0\nglintSpeed:0.5\nglintStrength:0.75\npreferredGraphicsBackend:\"vulkan\"\ngraphicsPreset:\"custom\"\nprioritizeChunkUpdates:1\nfullscreen:true\nexclusiveFullscreen:true\ngamma:0.5\nguiScale:2\nmaxAnisotropyBit:1\ntextureFiltering:0\nmaxFps:260\nimprovedTransparency:false\ninactivityFpsLimit:\"minimized\"\nmipmapLevels:4\nparticles:0\nrenderClouds:\"true\"\ncloudRange:64\nrenderDistance:16\nsimulationDistance:12\nscreenEffectScale:1.0\nvignette:true\nweatherRadius:10\nresourcePacks:[\"vanilla\"]\nincompatibleResourcePacks:[]\nlang:en_us\npauseOnLostFocus:true\n",
+    "config/sodium-options.json": "{\n  \"quality\": {\"hidden_fluid_culling\": true, \"improved_fluid_shaping\": false, \"use_closest_point_entity_sort\": false, \"pixel_filtering_mode\": \"NEAREST\"},\n  \"performance\": {\"chunk_builder_threads\": 0, \"chunk_build_defer_mode\": \"ALWAYS\", \"animate_only_visible_textures\": true, \"use_entity_culling\": true, \"use_fog_occlusion\": true, \"use_block_face_culling\": true, \"use_no_error_g_l_context\": true, \"quad_splitting_mode\": \"SAFE\"},\n  \"advanced\": {\"enable_memory_tracing\": false},\n  \"debug\": {\"terrain_sorting_enabled\": true}\n}\n",
+    "config/iris.properties": "allowUnknownShaders=false\ncolorSpace=SRGB\ndisableUpdateMessage=false\nenableDebugOptions=false\nenableShaders=true\nmaxShadowRenderDistance=32\nshaderPack=ComplementaryUnbound_r5.9.3.zip\n",
+    "vitrail/pack.txt": "pack=ComplementaryUnbound_r5.9.3.zip\nenabled=true\nshadowdistance=32\nrenderscale=100\nshadowmapscale=100\n",
+    "shaderpacks/ComplementaryUnbound_r5.9.3.zip.txt": "CLOUD_STYLE_DEFINE=1\nSUN_ANGLE=0\nSUN_MOON_STYLE_DEFINE=1\n"
+  }
+}
