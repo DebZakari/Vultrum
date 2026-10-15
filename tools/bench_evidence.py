@@ -136,6 +136,10 @@ class Run:
                or (arg.startswith("-Dvultrum.bench.timeline=") and arg.partition("=")[2].lower() in ("true", "chunks"))
                for arg in result.get("jvmArgs") or []):
             reasons.append("diagnostic shader/stats/timeline argument")
+        if any(arg.startswith("-Dvultrum.bench.tagMembershipCheck=")
+               and arg.partition("=")[2].lower() not in ("false", "")
+               for arg in result.get("jvmArgs") or []):
+            reasons.append("tag membership correctness checks enabled")
         try:
             start, end = _times(self)
             if start > end:

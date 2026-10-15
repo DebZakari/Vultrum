@@ -69,6 +69,19 @@ class EvidenceTest(unittest.TestCase):
         self.assertEqual(len(report.expected_changes), 1)
         self.assertFalse(assess(control, candidate, expected={"properties.experiment": (None, "false")}).eligible)
 
+    def test_tag_correctness_checks_are_excluded_even_when_both_runs_enable_them(self):
+        for value in ("true", "off"):
+            a, b = self.run_file(), self.run_file()
+            for run in (a, b):
+                run.results["jvmArgs"].append("-Dvultrum.bench.tagMembershipCheck=" + value)
+            report = assess(a, b)
+            self.assertFalse(report.eligible)
+            self.assertTrue(any("correctness checks" in reason for reason in report.exclusions))
+        a, b = self.run_file(), self.run_file()
+        for run in (a, b):
+            run.results["jvmArgs"].append("-Dvultrum.bench.tagMembershipCheck=false")
+        self.assertTrue(assess(a, b).eligible)
+
     def test_declared_setting_change_does_not_hide_other_fixture_changes(self):
         control, candidate = self.run_file(), self.run_file()
         candidate.settings["occlusion-cull"] = "false"
