@@ -137,7 +137,7 @@ def source_check(root, profile):
     result = subprocess.run(['git', 'diff', '--exit-code', profile['sourceTag'], '--', *files],
                             cwd=root, capture_output=True, text=True)
     if result.returncode:
-        raise ValueError('Runtime/build source differs from the pinned alpha.5 tag; use the documented tester checkout')
+        raise ValueError(f'Runtime/build source differs from {profile["sourceTag"]}; use the documented tester checkout')
     untracked = subprocess.run(['git', 'ls-files', '--others', '--exclude-standard', '--', *files],
                                cwd=root, capture_output=True, text=True)
     if untracked.returncode or untracked.stdout.strip():

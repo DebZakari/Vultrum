@@ -1,11 +1,11 @@
 {
-  "id": "alpha5-vitrail013",
-  "sourceTag": "v0.1.0-alpha.5",
+  "id": "alpha5-sodium093beta1-vitrail013",
+  "sourceTag": "4539b5847727b483562853f4a69a63ac90c53e3d",
   "minecraft": "26.3",
   "java": 25,
   "fabricLoader": "0.19.5",
-  "fabricApi": "0.162.0+26.3",
-  "sodium": "mc26.3-0.9.3-alpha.1-fabric",
+  "fabricApi": "0.163.0+26.3",
+  "sodium": "mc26.3-0.9.3-beta.1-fabric",
   "referenceFramebuffer": [1920, 1080],
   "artifacts": [
     {

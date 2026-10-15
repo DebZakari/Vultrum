@@ -56,6 +56,8 @@ In alpha.3, median peak frames during repeated terrain reloads at 32 chunks were
 
 Complementary Unbound through Vitrail, 1920×1080 fullscreen, RTX 3090 and Ryzen 5 5600X, measured with Vultrum 0.1.0-alpha.5 and Vitrail 0.13.0-beta.vultrum.1. "Without Vultrum" is the same game with all of Vultrum's settings off, which is plain Sodium and Vitrail. Every number is the mean of two runs of the benchmark in this repository ([`tools/bench.ps1`](tools/bench.ps1)), after a discarded warm-up. Static scenes wait until terrain finishes building before recording.
 
+These performance results use Sodium 0.9.3-alpha.1 and Fabric API 0.162.0+26.3. The newer dependency versions below were checked for compatibility; their performance has not been compared here.
+
 How much you gain depends on how much of the view is hidden. In a dark forest most of the terrain behind the first trees never gets drawn. High in the sky almost nothing is hidden, so the culling switches itself off and FPS stays where it was. At 16 chunks there's less to hide, and the gains are smaller (0 to 13%).
 
 While flying at 32 chunks, 1% low FPS was 17 to 24% higher with Vultrum. These lows and the longest frames fluctuate between runs.
@@ -109,6 +111,8 @@ You need a Fabric instance for Minecraft 26.3 on Java 25, with these mods:
 Fabric Loader 0.19.5 or later.
 
 Vultrum's Sodium integration supports versions from 0.9.3-alpha.1 up to, but excluding, 0.9.4-alpha. Unsupported versions disable the features that depend on Sodium until compatibility is checked.
+
+Alpha.5 also works with Sodium 0.9.3-beta.1 and Fabric API 0.163.0+26.3. This combination was checked on the RTX 3090 with Vitrail 0.13 and the existing 32-mod setup, including terrain reloads, shader switching, dimension changes, chunk streaming and both Vultrum settings pages. The existing alpha.5 download needs no replacement.
 
 <a id="vitrail"></a>For shader packs you can use Vitrail from Modrinth, or [Vultrum's build of Vitrail](https://github.com/DebZakari/vitrail-shaders/releases/tag/0.13.0-beta.vultrum.1). It's the build Vultrum is tested with: Vitrail 0.13.0-beta, plus faster drawing of mobs and chests. It replaces Vitrail in your `mods` folder. If something goes wrong with it, report it on [Vultrum's issues](https://github.com/DebZakari/Vultrum/issues), not Vitrail's.
 
