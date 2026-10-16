@@ -152,7 +152,7 @@ GPU occlusion culling automatically adapts to the GPU's compute limits, includin
 
 Tested on Vulkan together with Vitrail and Complementary Unbound, all in one instance, with no errors from Vultrum:
 
-These compatibility checks use default settings. Keep Skip Sunless Terrain off with ScalableLux; that combination has not been validated.
+These compatibility checks use default settings. Skip Sunless Terrain additionally passed light-update, reload and shadow-image checks with ScalableLux 0.3.0-alpha.0.6+26.3, Vitrail 0.13.0-beta.vultrum.1 and Complementary Unbound r5.9.3. It remains off by default.
 
 - **Performance mods:** Lithium, FerriteCore, ImmediatelyFast, Entity Culling, More Culling, C2ME, ScalableLux, Distant Horizons, Sodium Extra, Bobby, Dynamic FPS, BadOptimizations, Krypton, Debugify, Particle Core, FastQuit and Language Reload.
 - **Other popular mods:** Xaero's Minimap and World Map, JourneyMap, AppleSkin, Zoomify, Mod Menu, YACL, Cloth Config, ViaFabricPlus, LambDynamicLights, Continuity, Entity Model Features, Entity Texture Features, 3D Skin Layers, Not Enough Animations, First-person Model, JEI, Jade, Litematica, Freecam, Mouse Tweaks, Inventory Profiles Next, Controlling, Chat Heads, Shulker Box Tooltip, Wavey Capes, Sound Physics Remastered, Presence Footsteps, BetterF3 and Visuality.
