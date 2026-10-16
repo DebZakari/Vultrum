@@ -1,6 +1,6 @@
 # Testing Vultrum on another GPU
 
-Use this setup to test alpha.5 with Sodium 0.9.3-beta.1 and Fabric API 0.163.0+26.3, using the same shader settings and scenarios on each PC. It creates `run-compat-tester` inside this checkout and never edits a launcher instance. Results stay in ignored `bench-runs/` directories.
+Use this setup to test alpha.6 with Sodium 0.9.3-beta.1 and Fabric API 0.163.0+26.3, using the same shader settings and scenarios on each PC. It creates `run-compat-tester` inside this checkout and never edits a launcher instance. Results stay in ignored `bench-runs/` directories.
 
 ## Requirements and setup
 
@@ -11,15 +11,16 @@ Use this setup to test alpha.5 with Sodium 0.9.3-beta.1 and Fabric API 0.163.0+2
 Clone the repository, keeping its release tags, and run these commands from its root:
 
 ```powershell
+git checkout v0.1.0-alpha.6
 python tools/tester_setup.py --prepare
 python tools/tester_setup.py --verify
 ```
 
 The setup downloads the exact released Vitrail `0.13.0-beta.vultrum.1` jar and Complementary Unbound r5.9.3 from their published URLs and checks SHA-256 before installing either. Their URLs, checksums and settings are in [`tester-fixture.json`](tester-fixture.json). The shader pack is downloaded from its author's distribution and is not bundled here. Existing downloads can be used with `--vitrail-jar PATH --shader-pack PATH`; their checksums are still checked.
 
-Gradle supplies Minecraft 26.3, Fabric Loader 0.19.5, Fabric API 0.163.0+26.3 and Sodium 0.9.3-beta.1, as pinned in `gradle.properties`. It builds Vultrum from this checkout. The setup compares runtime/build source with the immutable commit in the profile's `sourceTag` field, which includes the updated dependencies. Vultrum's runtime classes and shaders are unchanged from alpha.5. It also refuses to overwrite an existing tester directory.
+Gradle supplies Minecraft 26.3, Fabric Loader 0.19.5, Fabric API 0.163.0+26.3 and Sodium 0.9.3-beta.1, as pinned in `gradle.properties`. It builds Vultrum from this checkout. The setup compares runtime/build source with the immutable release tag in the profile's `sourceTag` field, so the runtime matches alpha.6. It also refuses to overwrite an existing tester directory.
 
-An existing tester directory belongs to its original profile and is not migrated automatically. Use a separate checkout for this recipe. The earlier recipe with Sodium 0.9.3-alpha.1 and Fabric API 0.162.0+26.3 remains available at commit `c50fd2d`; keep its checkout and results separate. Runs using the two dependency combinations are different fixtures and must not be combined into one performance comparison.
+An existing tester directory belongs to its original profile and is not migrated automatically. Use a separate checkout for this recipe. The alpha.5 recipe with these newer dependencies remains at commit `8cb934e`; the earlier recipe with Sodium 0.9.3-alpha.1 and Fabric API 0.162.0+26.3 remains at `c50fd2d`. Keep their checkouts and results separate. Runs using different Vultrum runtimes or dependency combinations are different fixtures and must not be combined into one performance comparison.
 
 This is the minimal shader fixture. Extra performance mods and personal worlds are excluded. Worlds are generated from seed `20261008`; the scenarios select the same positions and located biomes/structures. This reproduces the recipe, not the exact entity positions or world state of an earlier recording.
 

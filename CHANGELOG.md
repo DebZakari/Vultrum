@@ -2,6 +2,14 @@
 
 What each release changed, for players. Newest first. Downloads are on [GitHub](https://github.com/DebZakari/Vultrum/releases) and [Modrinth](https://modrinth.com/mod/vultrum).
 
+## 0.1.0-alpha.6 (2026-10-16)
+
+- Reworked coordination of terrain reloads and chunk unloading, preserving the existing loading settings and budgets.
+- Checked compatibility with Sodium 0.9.3-beta.1 and Fabric API 0.163.0+26.3.
+- Added a [reproducible setup for testing on other GPUs](https://github.com/DebZakari/Vultrum/blob/v0.1.0-alpha.6/bench/TESTING.md), with fixed shader settings and correctness checks before performance testing.
+
+This is a maintenance and compatibility update. Settings and defaults are unchanged. Reloads, shader switching, dimension changes, window changes and rejoining passed across all four combinations of Spread Terrain Reloads and Spread Chunk Unloads. Checked on the RTX 3090; other GPUs remain untested. The published performance charts still describe alpha.5.
+
 ## 0.1.0-alpha.5 (2026-10-14)
 
 - Vultrum's culling now works with Vitrail 0.13. With Vitrail 0.13 installed, earlier versions greyed out the Culling settings and left the culling off.
