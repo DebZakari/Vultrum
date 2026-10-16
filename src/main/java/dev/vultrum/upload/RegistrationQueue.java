@@ -12,17 +12,13 @@ import java.util.function.LongSupplier;
  * snapshot is registered over several terrain setups; ordinary streaming additions still run immediately.
  * The queue owns only packed positions, never a level, section manager, mesh or GPU buffer.
  */
-public final class RegistrationQueue {
+final class RegistrationQueue {
     static final long BUDGET_NANOS = 2_000_000L;
     static final int QUEUE_SHARE = 256;
 
     private final LongLinkedOpenHashSet pending = new LongLinkedOpenHashSet();
     private final LongSupplier clock;
     private final long budgetNanos;
-
-    public RegistrationQueue() {
-        this(BUDGET_NANOS, System::nanoTime);
-    }
 
     RegistrationQueue(long budgetNanos, LongSupplier clock) {
         this.budgetNanos = budgetNanos;

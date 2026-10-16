@@ -23,7 +23,7 @@ import java.lang.ref.WeakReference;
  * a neighbour changed: block edits and light updates both reach {@code scheduleRebuildForChunk}, after the
  * new light data is readable. A chunk unload drops light data without telling Sodium, so the flags next to it
  * stay. Sodium alone draws no section of a chunk unless the chunk and its eight neighbours have light data.
- * With the unload budget ({@link dev.vultrum.upload.UnloadBudget}) a column is still drawn while it waits to be
+ * With the unload budget ({@link dev.vultrum.upload.ColumnLifecycle}) a column is still drawn while it waits to be
  * removed: a flag kept from before matches the mesh it still has, and a flag worked out then reads the missing
  * light as not dark ({@link SunlessFlags#dark}), so its section isn't skipped. The unloaded chunk's light coming
  * back marks the 3×3 columns dirty. Everything runs on the render thread.

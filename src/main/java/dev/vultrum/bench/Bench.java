@@ -9,7 +9,7 @@ import dev.vultrum.cull.ShadowRegion;
 import dev.vultrum.mixin.HudAccessor;
 import dev.vultrum.net.PacketBudget;
 import dev.vultrum.upload.ReclaimThread;
-import dev.vultrum.upload.UnloadBudget;
+import dev.vultrum.upload.ColumnLifecycle;
 import net.caffeinemc.mods.sodium.client.config.ConfigManager;
 import net.caffeinemc.mods.sodium.client.config.structure.OptionPage;
 import net.caffeinemc.mods.sodium.client.gpu.device.backend.DrawBackend;
@@ -531,7 +531,7 @@ public final class Bench {
         stableTicks = loaded == lastLoaded ? stableTicks + 1 : 0;
         lastLoaded = loaded;
         var renderer = SodiumWorldRenderer.instanceNullable();
-        return renderer != null && renderer.isTerrainRenderComplete() && UnloadBudget.pending() == 0 && columnsLoaded(mc, renderDistance)
+        return renderer != null && renderer.isTerrainRenderComplete() && ColumnLifecycle.pendingClientUnloads() == 0 && columnsLoaded(mc, renderDistance)
                 && stableTicks >= STABLE_TICKS && seconds() >= TERRAIN_MIN_S;
     }
 
