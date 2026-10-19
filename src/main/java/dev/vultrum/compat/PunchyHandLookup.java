@@ -35,8 +35,17 @@ public final class PunchyHandLookup {
         if (exit == null || exit.getOpcode() != Opcodes.IRETURN) return false;
 
         int lookups = 0;
+        List<String> calls = new java.util.ArrayList<>();
         boolean expanded = false, compressed = false;
         for (AbstractInsnNode instruction : method.instructions) {
+            if (instruction instanceof InvokeDynamicInsnNode || instruction.getOpcode() == Opcodes.ATHROW) return false;
+            if (instruction instanceof MethodInsnNode call) {
+                int position = method.instructions.indexOf(call);
+                if (method.tryCatchBlocks.stream().noneMatch(block -> position >= method.instructions.indexOf(block.start)
+                        && position < method.instructions.indexOf(block.end))) return false;
+                if (call.itf) return false;
+                calls.add(call.getOpcode() + ":" + call.owner + "." + call.name + call.desc);
+            }
             if (instruction instanceof MethodInsnNode call && call.owner.equals("java/lang/Class") && call.name.equals("forName")) {
                 if (call.getOpcode() != Opcodes.INVOKESTATIC || !call.desc.equals("(Ljava/lang/String;)Ljava/lang/Class;")) return false;
                 AbstractInsnNode argument = call.getPrevious();
@@ -49,7 +58,14 @@ public final class PunchyHandLookup {
                 else compressed = true;
             }
         }
-        if (lookups != 1 || expanded && compressed) return false;
+        // Only the checked reflection calls may fail here. An added helper could throw an unrelated absence.
+        if (lookups != 1 || expanded && compressed || !calls.equals(List.of(
+                Opcodes.INVOKESTATIC + ":java/lang/Class.forName(Ljava/lang/String;)Ljava/lang/Class;",
+                Opcodes.INVOKEVIRTUAL + ":java/lang/Class.getField(Ljava/lang/String;)Ljava/lang/reflect/Field;",
+                Opcodes.INVOKEVIRTUAL + ":java/lang/reflect/Field.get(Ljava/lang/Object;)Ljava/lang/Object;",
+                Opcodes.INVOKEVIRTUAL + ":java/lang/Class.getMethod(Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;",
+                Opcodes.INVOKEVIRTUAL + ":java/lang/Class.getMethod(Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;")))
+            return false;
 
         // Validate everything before changing the target. Unknown layouts keep Punchy's original behavior.
         int frameType = expanded ? Opcodes.F_NEW : Opcodes.F_FULL;

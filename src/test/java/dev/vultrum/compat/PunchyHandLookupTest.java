@@ -166,6 +166,34 @@ class PunchyHandLookupTest {
         assertFalse(PunchyHandLookup.supports("2.8f-hotfix", true, true));
     }
 
+    @Test void unexpectedCallInTheFailureRegionIsLeftUnchanged() throws Exception {
+        ClassNode node = fixture(false);
+        MethodNode method = node.methods.stream().filter(m -> m.name.equals(RESOLVE)).findFirst().orElseThrow();
+        var helper = new MethodInsnNode(Opcodes.INVOKESTATIC, "other/Helper", "prepare", "()V", false);
+        method.instructions.insert(method.tryCatchBlocks.getFirst().start, helper);
+        byte[] before = bytes(node);
+        assertFalse(PunchyHandLookup.apply(node));
+        assertArrayEquals(before, bytes(node));
+    }
+
+    @Test void lookupOutsideTheFailureRegionIsLeftUnchanged() throws Exception {
+        ClassNode node = fixture(true);
+        MethodNode method = node.methods.stream().filter(m -> m.name.equals(RESOLVE)).findFirst().orElseThrow();
+        var lookup = method.instructions.iterator();
+        while (lookup.hasNext()) {
+            AbstractInsnNode instruction = lookup.next();
+            if (instruction instanceof MethodInsnNode call && call.name.equals("forName")) {
+                var afterLookup = new LabelNode();
+                method.instructions.insert(call, afterLookup);
+                method.tryCatchBlocks.getFirst().start = afterLookup;
+                break;
+            }
+        }
+        byte[] before = bytes(node);
+        assertFalse(PunchyHandLookup.apply(node));
+        assertArrayEquals(before, bytes(node));
+    }
+
     @Test void repeatedApplicationDoesNotAddAnotherGuard() throws Exception {
         ClassNode node = fixture(true);
         assertTrue(PunchyHandLookup.apply(node));
