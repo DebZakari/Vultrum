@@ -2,6 +2,12 @@
 
 What each release changed, for players. Newest first. Downloads are on [GitHub](https://github.com/DebZakari/Vultrum/releases) and [Modrinth](https://modrinth.com/mod/vultrum).
 
+## 0.1.0-alpha.8 (2026-10-19)
+
+- Fixed cached player-head icons retaining textures from before a resource-pack reload. This could cause a Vulkan device-loss crash when switching shaders off and back on.
+
+Settings and defaults are unchanged. Checked on the RTX 3090 with the full Fresh Animations setup, resource-pack reloads, shader switching and world rejoin. The published performance charts still describe alpha.5.
+
 ## 0.1.0-alpha.7 (2026-10-19)
 
 - Added **Faster Punchy Hands** in the Compatibility group on Vultrum's Culling page in Sodium's video settings. It reduces repeated shader compatibility checks when using Punchy 2.8f-hotfix with Vitrail, without skipping hand animations.

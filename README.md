@@ -106,7 +106,7 @@ You need a Fabric instance for Minecraft 26.3 on Java 25, with these mods:
 | [Sodium](https://modrinth.com/mod/sodium) | 0.9.3, starting with alpha.1 | required. 0.9.2 won't load with Vultrum |
 | [Fabric API](https://modrinth.com/mod/fabric-api) | 0.162.0+26.3 or later | required by Sodium |
 | [Vitrail Shaders](https://modrinth.com/mod/vitrail-shaders) | 0.12 or 0.13 | optional, for shader packs on Vulkan and for Vultrum's culling |
-| Vultrum | 0.1.0-alpha.7 | from [GitHub Releases](https://github.com/DebZakari/Vultrum/releases) or [Modrinth](https://modrinth.com/mod/vultrum) |
+| Vultrum | 0.1.0-alpha.8 | from [GitHub Releases](https://github.com/DebZakari/Vultrum/releases) or [Modrinth](https://modrinth.com/mod/vultrum) |
 
 Fabric Loader 0.19.5 or later.
 
@@ -136,7 +136,7 @@ GPU Occlusion Culling falls back to ordinary terrain drawing when the device is 
 
 The **Compatibility** group on the Culling page also offers **Faster Punchy Hands**, off by default. It reduces Punchy's first-person shader-check overhead without skipping hand animations. It needs Punchy 2.8f-hotfix and a supported Vitrail version, with Iris absent. Other versions leave the hook disabled. Changing it takes effect after a restart.
 
-In the tested full mod setup, switching shaders off and back on caused a Vulkan device-loss crash with Faster Punchy Hands both enabled and disabled. This release does not fix that shader-switching issue. Resource-pack reload and world rejoin passed separately.
+Resource-pack reloads now refresh player-head icons. Alpha.8 fixes the crash reproduced when subsequently switching shaders off and back on in the tested full mod setup.
 
 **Loading** needs only Sodium, and works without shaders.
 
