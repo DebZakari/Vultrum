@@ -34,6 +34,10 @@ public final class VultrumOptions implements ConfigEntryPoint {
                 .setName(Component.translatable("vultrum.options.group.shadow"))
                 .addOption(option(builder, VultrumConfig.SHADOW_FACE_CULL, hooked, storage, VultrumConfig::shadowFaceCull, VultrumConfig::withShadowFaceCull))
                 .addOption(option(builder, VultrumConfig.SUNLESS_SHADOW, hooked, storage, VultrumConfig::sunlessShadow, VultrumConfig::withSunlessShadow));
+        var compatibility = builder.createOptionGroup()
+                .setName(Component.translatable("vultrum.options.group.compatibility"))
+                .addOption(option(builder, VultrumConfig.PUNCHY_HAND_CACHE, VultrumMixinPlugin.supportsPunchyHandLookup(), storage,
+                        VultrumConfig::punchyHandCache, VultrumConfig::withPunchyHandCache));
         // Need neither Vitrail nor a shader pack: they hold back the client's packets, size Sodium's buffers, spread its
         // chunk removals and reload registration, and move its buffer reclaim off the render thread.
         var loading = builder.createOptionGroup()
@@ -49,7 +53,8 @@ public final class VultrumOptions implements ConfigEntryPoint {
                 .addPage(builder.createOptionPage()
                         .setName(Component.translatable("vultrum.options.page"))
                         .addOptionGroup(culling)
-                        .addOptionGroup(shadow))
+                        .addOptionGroup(shadow)
+                        .addOptionGroup(compatibility))
                 .addPage(builder.createOptionPage()
                         .setName(Component.translatable("vultrum.options.page.loading"))
                         .addOptionGroup(loading));

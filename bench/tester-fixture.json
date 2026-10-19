@@ -27,7 +27,8 @@
     "arena-cap": true,
     "unload-budget": true,
     "reclaim-thread": true,
-    "reload-registration": true
+    "reload-registration": true,
+    "punchy-hand-cache": false
   },
   "files": {
     "options.txt": "version:5023\nao:true\nbiomeBlendRadius:2\nchunkSectionFadeInTime:0.75\ncutoutLeaves:true\nenableVsync:false\nentityDistanceScaling:1.0\nentityShadows:true\nfov:0.5\nfovEffectScale:1.0\ndarknessEffectScale:1.0\nglintSpeed:0.5\nglintStrength:0.75\npreferredGraphicsBackend:\"vulkan\"\ngraphicsPreset:\"custom\"\nprioritizeChunkUpdates:1\nfullscreen:true\nexclusiveFullscreen:true\ngamma:0.5\nguiScale:2\nmaxAnisotropyBit:1\ntextureFiltering:0\nmaxFps:260\nimprovedTransparency:false\ninactivityFpsLimit:\"minimized\"\nmipmapLevels:4\nparticles:0\nrenderClouds:\"true\"\ncloudRange:64\nrenderDistance:16\nsimulationDistance:12\nscreenEffectScale:1.0\nvignette:true\nweatherRadius:10\nresourcePacks:[\"vanilla\"]\nincompatibleResourcePacks:[]\nlang:en_us\npauseOnLostFocus:true\n",

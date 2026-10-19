@@ -1,6 +1,7 @@
 package dev.vultrum;
 
 import dev.vultrum.bench.Timeline;
+import dev.vultrum.compat.PunchyHandLookup;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.Version;
 import net.fabricmc.loader.api.VersionParsingException;
@@ -26,6 +27,7 @@ public final class VultrumMixinPlugin implements IMixinConfigPlugin {
 
     static final Range SODIUM = new Range("sodium", ">=0.9.3-alpha.1 <0.9.4-alpha");
     static final Range VITRAIL = new Range("vitrail", ">=0.12.0-alpha <0.14.0-alpha");
+    private static final String PUNCHY_HAND_LOOKUP = "dev.vultrum.mixin.PunchyHandLookupMixin";
     /**
      * Mixins into each package need every listed mod installed and in range. The Vitrail hooks feed the
      * shadow face cull, which uses Sodium's API, so they need Sodium in range too.
@@ -62,6 +64,12 @@ public final class VultrumMixinPlugin implements IMixinConfigPlugin {
         return mod.isPresent() && inRange(mod.get().getMetadata().getVersion(), range.range());
     }
 
+    public static boolean supportsPunchyHandLookup() {
+        var loader = FabricLoader.getInstance();
+        String version = loader.getModContainer("punchy").map(mod -> mod.getMetadata().getVersion().getFriendlyString()).orElse(null);
+        return PunchyHandLookup.supports(version, supports("dev.vitrail."), loader.isModLoaded("iris"));
+    }
+
     static boolean inRange(Version version, String range) {
         try {
             return VersionPredicate.parse(range).test(version);
@@ -83,6 +91,8 @@ public final class VultrumMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
+        if (PUNCHY_HAND_LOOKUP.equals(mixinClassName))
+            return supportsPunchyHandLookup() && VultrumConfig.get().punchyHandCache();
         if (BENCH_ONLY.contains(mixinClassName) || TIMELINE_ONLY.contains(mixinClassName)) {
             String scenario = System.getProperty("vultrum.bench");
             if (scenario == null || scenario.isBlank()) return false;
@@ -101,5 +111,11 @@ public final class VultrumMixinPlugin implements IMixinConfigPlugin {
     @Override public void acceptTargets(Set<String> myTargets, Set<String> otherTargets) {}
     @Override public List<String> getMixins() { return null; }
     @Override public void preApply(String targetClassName, ClassNode targetClass, String mixinClassName, IMixinInfo mixinInfo) {}
-    @Override public void postApply(String targetClassName, ClassNode targetClass, String mixinClassName, IMixinInfo mixinInfo) {}
+    @Override
+    public void postApply(String targetClassName, ClassNode targetClass, String mixinClassName, IMixinInfo mixinInfo) {
+        if (PUNCHY_HAND_LOOKUP.equals(mixinClassName)) {
+            if (PunchyHandLookup.apply(targetClass)) LOGGER.info("Punchy hand-renderer lookup cache is enabled");
+            else LOGGER.warn("Punchy hand-renderer lookup cache skipped: the resolver layout is unsupported");
+        }
+    }
 }

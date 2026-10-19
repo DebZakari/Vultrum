@@ -36,7 +36,7 @@ Minecraft 26.3 can draw with Vulkan instead of OpenGL. Vultrum adds two things o
 
 **With or without shaders**, it smooths out chunk loading. Sodium does some of its loading work in bursts: a pile of new chunks from the server, the chunks that leave your view, the cleanup after Java's garbage collector runs. Vultrum spreads that work over several frames, so flying into new terrain stutters less. Alpha.3 also spreads already-loaded terrain registration across frames after F3+A or a render distance change, reducing reload freezes.
 
-Most features are on by default and can be turned off in Sodium's video settings. Skip Sunless Terrain is off by default.
+Most features are on by default and can be turned off in Sodium's video settings. Skip Sunless Terrain and Faster Punchy Hands are off by default.
 
 Inspired by [Nvidium](https://github.com/MCRcortex/nvidium) and [Vercidium's voxel optimisation work](https://vercidium.com/blog/voxel-world-optimisations/).
 
@@ -133,6 +133,8 @@ Vultrum adds two pages to Sodium's video settings, **Culling** and **Loading**. 
 | Skip Sunless Terrain | off | Leaves terrain that sunlight can't reach, such as caves, out of the shadow map. About 1% more FPS. |
 
 GPU Occlusion Culling falls back to ordinary terrain drawing when the device is unsupported or its cull fails. A runtime failure disables it for the rest of the session. The log reports whether the setting was requested, whether it is active, and why it is off. A shader pack must be enabled and its saved launch state readable when the game starts; enabling it later needs a restart.
+
+The **Compatibility** group on the Culling page also offers **Faster Punchy Hands**, off by default. It reduces Punchy's first-person shader-check overhead without skipping hand animations. It needs Punchy 2.8f-hotfix and a supported Vitrail version, with Iris absent. Other versions leave the hook disabled. Changing it takes effect after a restart.
 
 **Loading** needs only Sodium, and works without shaders.
 

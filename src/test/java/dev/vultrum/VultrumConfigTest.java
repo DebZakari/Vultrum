@@ -30,6 +30,7 @@ class VultrumConfigTest {
         assertTrue(Files.readString(file).contains("unload-budget=true"));
         assertTrue(Files.readString(file).contains("reclaim-thread=true"));
         assertTrue(Files.readString(file).contains("reload-registration=true"));
+        assertTrue(Files.readString(file).contains("punchy-hand-cache=false"));
         assertEquals(VultrumConfig.DEFAULTS, VultrumConfig.load(file), "the written file reads back as the defaults");
     }
 
@@ -60,6 +61,8 @@ class VultrumConfigTest {
         var reloadOff = loadWith("reload-registration=false\n");
         assertFalse(reloadOff.reloadRegistration());
         assertTrue(reloadOff.reclaimThread());
+        assertTrue(loadWith("punchy-hand-cache=true\n").punchyHandCache());
+        assertFalse(loadWith("punchy-hand-cache=false\n").punchyHandCache());
     }
 
     @Test
@@ -75,6 +78,8 @@ class VultrumConfigTest {
         assertTrue(loadWith("unload-budget=false\n").reclaimThread(), "a file from before the key existed gets the reclaim thread");
         assertTrue(loadWith("reclaim-thread=false\n").reloadRegistration(), "an older file gets reload registration");
         assertTrue(loadWith("reload-registration=invalid\n").reloadRegistration());
+        assertFalse(loadWith("reload-registration=true\n").punchyHandCache());
+        assertFalse(loadWith("punchy-hand-cache=invalid\n").punchyHandCache());
     }
 
     @Test
@@ -88,15 +93,16 @@ class VultrumConfigTest {
         assertTrue(Files.readString(file).contains("unload-budget=true"));
         assertTrue(Files.readString(file).contains("reclaim-thread=true"));
         assertTrue(Files.readString(file).contains("reload-registration=true"));
+        assertTrue(Files.readString(file).contains("punchy-hand-cache=false"));
         assertEquals(config, VultrumConfig.load(file), "the rewrite keeps the values it read");
     }
 
     @Test
     void writtenSettingsReadBack() {
         Path file = dir.resolve("vultrum.properties");
-        for (int bits = 0; bits < 256; bits++) {
+        for (int bits = 0; bits < 512; bits++) {
             var config = new VultrumConfig((bits & 1) != 0, (bits & 2) != 0, (bits & 4) != 0, (bits & 8) != 0, (bits & 16) != 0, (bits & 32) != 0,
-                    (bits & 64) != 0, (bits & 128) != 0);
+                    (bits & 64) != 0, (bits & 128) != 0, (bits & 256) != 0);
             VultrumConfig.write(file, config);
             assertEquals(config, VultrumConfig.load(file));
         }
@@ -113,12 +119,22 @@ class VultrumConfigTest {
         assertEquals(new VultrumConfig(true, false, true, false, true, true, true, false), config.withUnloadBudget(true));
         assertEquals(new VultrumConfig(true, false, true, false, true, false, false, false), config.withReclaimThread(false));
         assertEquals(new VultrumConfig(true, false, true, false, true, false, true, true), config.withReloadRegistration(true));
+        assertEquals(new VultrumConfig(true, false, true, false, true, false, true, false, true), config.withPunchyHandCache(true));
+        var cached = config.withPunchyHandCache(true);
+        assertTrue(cached.withShadowFaceCull(false).punchyHandCache());
+        assertTrue(cached.withOcclusionCull(true).punchyHandCache());
+        assertTrue(cached.withSunlessShadow(false).punchyHandCache());
+        assertTrue(cached.withPacketBudget(true).punchyHandCache());
+        assertTrue(cached.withArenaCap(false).punchyHandCache());
+        assertTrue(cached.withUnloadBudget(true).punchyHandCache());
+        assertTrue(cached.withReclaimThread(false).punchyHandCache());
+        assertTrue(cached.withReloadRegistration(true).punchyHandCache());
     }
 
     @Test
     void aCompleteFileIsLeftAlone() throws IOException {
         String content = "shadow-face-cull=false\nocclusion-cull=false\nsunless-shadow=true\npacket-budget=false\narena-cap=false\nunload-budget=false\n"
-                + "reclaim-thread=false\nreload-registration=false\n";
+                + "reclaim-thread=false\nreload-registration=false\npunchy-hand-cache=false\n";
         loadWith(content);
         assertEquals(content, Files.readString(dir.resolve("vultrum.properties")));
     }
