@@ -114,7 +114,7 @@ Vultrum's Sodium integration supports versions from 0.9.3-alpha.1 up to, but exc
 
 Alpha.6 was checked with Sodium 0.9.3-beta.1 and Fabric API 0.163.0+26.3 on the RTX 3090 with Vitrail 0.13 and the existing 32-mod setup, including terrain reloads, shader switching, dimension changes, window changes and rejoining. Alpha.5 also supports these dependency versions.
 
-<a id="vitrail"></a>For shader packs you can use Vitrail from Modrinth, or [Vultrum's build of Vitrail](https://github.com/DebZakari/vitrail-shaders/releases/tag/0.13.0-beta.vultrum.1). It's the build Vultrum is tested with: Vitrail 0.13.0-beta, plus faster drawing of mobs and chests. It replaces Vitrail in your `mods` folder. If something goes wrong with it, report it on [Vultrum's issues](https://github.com/DebZakari/Vultrum/issues), not Vitrail's.
+<a id="vitrail"></a>For shader packs you can use Vitrail from Modrinth, or [Vultrum's build of Vitrail](https://github.com/DebZakari/vitrail-shaders/releases/tag/0.13.0-beta.vultrum.2). It's the build Vultrum is tested with: Vitrail 0.13.0-beta, plus faster drawing of mobs and chests and a fix for mipmapped shader targets. It replaces Vitrail in your `mods` folder. If something goes wrong with it, report it on [Vultrum's issues](https://github.com/DebZakari/Vultrum/issues), not Vitrail's.
 
 What changed in each version is in the [changelog](CHANGELOG.md).
 
