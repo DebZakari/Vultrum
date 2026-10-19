@@ -2,6 +2,15 @@
 
 What each release changed, for players. Newest first. Downloads are on [GitHub](https://github.com/DebZakari/Vultrum/releases) and [Modrinth](https://modrinth.com/mod/vultrum).
 
+## 0.1.0-alpha.7 (2026-10-19)
+
+- Added **Faster Punchy Hands** in the Compatibility group on Vultrum's Culling page in Sodium's video settings. It reduces repeated shader compatibility checks when using Punchy 2.8f-hotfix with Vitrail, without skipping hand animations.
+- The option is **off by default** and takes effect after a restart. It stays inactive with Iris, other Punchy versions, or an unsupported Vitrail version.
+
+Checked on the RTX 3090 with Fresh Animations enabled, including held items, swings, resource-pack reload, world rejoin and mod compatibility. The FPS benefit depends on the scene and mod setup. The published performance charts still describe alpha.5.
+
+Known issue in the tested full mod setup: switching shaders off and back on caused a Vulkan device-loss crash with this option both enabled and disabled. This release does not fix that shader-switching issue.
+
 ## 0.1.0-alpha.6 (2026-10-16)
 
 - Reworked coordination of terrain reloads and chunk unloading, preserving the existing loading settings and budgets.
