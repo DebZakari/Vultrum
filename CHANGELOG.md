@@ -2,9 +2,11 @@
 
 What each release changed, for players. Newest first. Downloads are on [GitHub](https://github.com/DebZakari/Vultrum/releases) and [Modrinth](https://modrinth.com/mod/vultrum).
 
-## Unreleased
+## 0.1.0-alpha.9 (2026-10-22)
 
 - Faster Punchy Hands now supports Punchy 2.8g as well as 2.8f-hotfix. Settings and defaults are unchanged.
+
+This is a compatibility update. The published performance charts still describe alpha.5.
 
 ## 0.1.0-alpha.8 (2026-10-19)
 

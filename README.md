@@ -26,7 +26,7 @@
 </p>
 
 > [!NOTE]
-> Vultrum is in alpha. Version 0.1.0-alpha.7 has been tested on one PC: Windows 11, an NVIDIA RTX 3090 and a Ryzen 5 5600X. If something breaks or looks wrong, please [open an issue](https://github.com/DebZakari/Vultrum/issues) and say which GPU you have.
+> Vultrum is in alpha. Version 0.1.0-alpha.9 has been tested on one PC: Windows 11, an NVIDIA RTX 3090 and a Ryzen 5 5600X. If something breaks or looks wrong, please [open an issue](https://github.com/DebZakari/Vultrum/issues) and say which GPU you have.
 
 ## What it does
 
@@ -106,7 +106,7 @@ You need a Fabric instance for Minecraft 26.3 on Java 25, with these mods:
 | [Sodium](https://modrinth.com/mod/sodium) | 0.9.3, starting with alpha.1 | required. 0.9.2 won't load with Vultrum |
 | [Fabric API](https://modrinth.com/mod/fabric-api) | 0.162.0+26.3 or later | required by Sodium |
 | [Vitrail Shaders](https://modrinth.com/mod/vitrail-shaders) | 0.12 or 0.13 | optional, for shader packs on Vulkan and for Vultrum's culling |
-| Vultrum | 0.1.0-alpha.8 | from [GitHub Releases](https://github.com/DebZakari/Vultrum/releases) or [Modrinth](https://modrinth.com/mod/vultrum) |
+| Vultrum | 0.1.0-alpha.9 | from [GitHub Releases](https://github.com/DebZakari/Vultrum/releases) or [Modrinth](https://modrinth.com/mod/vultrum) |
 
 Fabric Loader 0.19.5 or later.
 
