@@ -4,7 +4,7 @@
   "vultrum.options.group.shadow": "Shadow map",
   "vultrum.options.group.compatibility": "Compatibility",
   "vultrum.options.punchy_hand_cache": "Faster Punchy Hands",
-  "vultrum.options.punchy_hand_cache.tooltip": "Reduces CPU overhead from Punchy's first-person shader checks when Iris is absent. Requires Punchy 2.8f-hotfix and a supported Vitrail version.\n\nHand animations are preserved. Off by default.",
+  "vultrum.options.punchy_hand_cache.tooltip": "Reduces CPU overhead from Punchy's first-person shader checks when Iris is absent. Requires Punchy 2.8f-hotfix or 2.8g and a supported Vitrail version.\n\nHand animations are preserved. Off by default.",
   "vultrum.options.occlusion_cull": "GPU Occlusion Culling",
   "vultrum.options.occlusion_cull.tooltip": "Skips terrain hidden behind other terrain, found on the GPU each frame. Needs a Vitrail shader pack enabled at launch.\n\nTurns itself off in open scenes, where it would cost more than it saves.",
   "vultrum.options.shadow_face_cull": "Light-Facing Shadow Faces",

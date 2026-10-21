@@ -13,7 +13,7 @@ public final class PunchyHandLookup {
     private PunchyHandLookup() {}
 
     public static boolean supports(String version, boolean vitrail, boolean iris) {
-        return "2.8f-hotfix".equals(version) && vitrail && !iris;
+        return ("2.8f-hotfix".equals(version) || "2.8g".equals(version)) && vitrail && !iris;
     }
 
     public static boolean apply(ClassNode target) {

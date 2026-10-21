@@ -2,6 +2,10 @@
 
 What each release changed, for players. Newest first. Downloads are on [GitHub](https://github.com/DebZakari/Vultrum/releases) and [Modrinth](https://modrinth.com/mod/vultrum).
 
+## Unreleased
+
+- Faster Punchy Hands now supports Punchy 2.8g as well as 2.8f-hotfix. Settings and defaults are unchanged.
+
 ## 0.1.0-alpha.8 (2026-10-19)
 
 - Fixed cached player-head icons retaining textures from before a resource-pack reload. This could cause a Vulkan device-loss crash when switching shaders off and back on.

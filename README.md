@@ -134,7 +134,7 @@ Vultrum adds two pages to Sodium's video settings, **Culling** and **Loading**. 
 
 GPU Occlusion Culling falls back to ordinary terrain drawing when the device is unsupported or its cull fails. A runtime failure disables it for the rest of the session. The log reports whether the setting was requested, whether it is active, and why it is off. A shader pack must be enabled and its saved launch state readable when the game starts; enabling it later needs a restart.
 
-The **Compatibility** group on the Culling page also offers **Faster Punchy Hands**, off by default. It reduces Punchy's first-person shader-check overhead without skipping hand animations. It needs Punchy 2.8f-hotfix and a supported Vitrail version, with Iris absent. Other versions leave the hook disabled. Changing it takes effect after a restart.
+The **Compatibility** group on the Culling page also offers **Faster Punchy Hands**, off by default. It reduces Punchy's first-person shader-check overhead without skipping hand animations. It needs Punchy 2.8f-hotfix or 2.8g and a supported Vitrail version, with Iris absent. Other versions leave the hook disabled. Changing it takes effect after a restart.
 
 Resource-pack reloads now refresh player-head icons. Alpha.8 fixes the crash reproduced when subsequently switching shaders off and back on in the tested full mod setup.
 

@@ -159,11 +159,14 @@ class PunchyHandLookupTest {
     }
 
     @Test void onlyTheCheckedModCombinationIsSupported() {
-        assertTrue(PunchyHandLookup.supports("2.8f-hotfix", true, false));
+        for (String version : new String[]{"2.8f-hotfix", "2.8g"}) {
+            assertTrue(PunchyHandLookup.supports(version, true, false));
+            assertFalse(PunchyHandLookup.supports(version, false, false));
+            assertFalse(PunchyHandLookup.supports(version, true, true));
+        }
         assertFalse(PunchyHandLookup.supports(null, true, false));
-        assertFalse(PunchyHandLookup.supports("2.8g", true, false));
-        assertFalse(PunchyHandLookup.supports("2.8f-hotfix", false, false));
-        assertFalse(PunchyHandLookup.supports("2.8f-hotfix", true, true));
+        assertFalse(PunchyHandLookup.supports("2.8h", true, false));
+        assertFalse(PunchyHandLookup.supports("2.8g-hotfix", true, false));
     }
 
     @Test void unexpectedCallInTheFailureRegionIsLeftUnchanged() throws Exception {

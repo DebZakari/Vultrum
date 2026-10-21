@@ -167,7 +167,7 @@ public record VultrumConfig(boolean shadowFaceCull, boolean occlusionCull, boole
                     %s=%b
 
                     # Reduce Punchy's first-person animation overhead when Iris is absent. Requires Punchy
-                    # 2.8f-hotfix with Vitrail. Hand animations are preserved.
+                    # 2.8f-hotfix or 2.8g with Vitrail. Hand animations are preserved.
                     %s=%b
                     """.formatted(SHADOW_FACE_CULL, config.shadowFaceCull, OCCLUSION_CULL, config.occlusionCull,
                     SUNLESS_SHADOW, config.sunlessShadow, PACKET_BUDGET, config.packetBudget, ARENA_CAP, config.arenaCap,
