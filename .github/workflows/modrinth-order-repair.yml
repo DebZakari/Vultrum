@@ -1,4 +1,4 @@
-name: Restore Modrinth release order
+name: Inspect Modrinth project content
 
 on:
   workflow_dispatch:
@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-      - name: Remove the out-of-order version and inspect project content
+      - name: Inspect project content and version order
         env:
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
         run: |
@@ -27,38 +27,17 @@ jobs:
           import json
           import os
           import sys
-          import urllib.error
-          import urllib.request
           sys.path.insert(0, 'tools')
           import publish_modrinth as publisher
 
           project_id = 'LV34xpJ5'
-          version_id = '5oyzZdaD'
           token = os.environ['MODRINTH_TOKEN']
           project = publisher.modrinth(f'/project/{project_id}', token)
           assert project['id'] == project_id and project['title'] == 'Vultrum'
-          before = publisher.project_versions(project_id, token)
-          version = publisher.modrinth(f'/version/{version_id}', token)
-          assert version['id'] == version_id and version['project_id'] == project_id
-          assert version['version_number'] == '0.1.0-alpha.9+mc26.3'
-          primary = [item for item in version['files'] if item['primary']]
-          assert len(primary) == 1
-          assert primary[0]['filename'] == 'vultrum-0.1.0-alpha.9+mc26.3.jar'
-          assert primary[0]['hashes']['sha512'] == 'b076eecb0d304db9717dbcace297f83d3129567c998911bf6720257f908233a300abbb8ff05373fa9dfc37f38aaa701cbae6657d9d5e7ddf00ac66d230d65d93'
-          request = urllib.request.Request(
-              publisher.API + f'/version/{version_id}', method='DELETE',
-              headers={'User-Agent': publisher.USER_AGENT, 'Authorization': token})
-          try:
-              with urllib.request.build_opener(publisher.NoRedirect).open(request, timeout=90) as response:
-                  assert response.status == 204
-          except urllib.error.HTTPError as error:
-              raise SystemExit(f'Version deletion failed (HTTP {error.code}).') from None
-          after = publisher.project_versions(project_id, token)
-          assert {item['id'] for item in after} == {item['id'] for item in before} - {version_id}
-          print('DELETED_VERSION=' + version_id)
+          versions = publisher.project_versions(project_id, token)
           print('VERSIONS=' + json.dumps([
               {key: item[key] for key in ('id', 'name', 'version_number', 'date_published')}
-              for item in sorted(after, key=lambda item: item['date_published'])]))
+              for item in sorted(versions, key=lambda item: item['date_published'])]))
           print('PROJECT_CONTENT=' + json.dumps({
               key: project.get(key) for key in ('id', 'status', 'description', 'body', 'gallery')}))
           PY
