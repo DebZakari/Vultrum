@@ -47,11 +47,12 @@ public final class FrameTimer {
     }
     public static void beginFrame() {
         if (measurements == null) return;
+        // Preserve render-entry timestamps: query setup/collection belongs inside render CPU time.
+        long frame = measurements.beginFrame();
         if (gpu == null) gpu = new GpuTimer();
         if (!statsTried && VultrumFeatures.statsRequested()) { statsTried = true; stats = PipelineStats.create(); }
         measurements.statisticsAvailable(stats != null);
         collect();
-        long frame = measurements.beginFrame();
         long window = measurements.frameWindow();
         gpu.beginFrame(frame, window, gpuSink);
         if (stats != null) stats.beginFrame(frame, window, pipelineSink);
