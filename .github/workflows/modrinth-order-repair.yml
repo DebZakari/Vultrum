@@ -1,4 +1,4 @@
-name: Inspect Modrinth project content
+name: Update Modrinth project description
 
 on:
   workflow_dispatch:
@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-      - name: Inspect project content and version order
+      - name: Verify version order and update project description
         env:
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
         run: |
@@ -27,6 +27,9 @@ jobs:
           import json
           import os
           import sys
+          from pathlib import Path
+          import urllib.error
+          import urllib.request
           sys.path.insert(0, 'tools')
           import publish_modrinth as publisher
 
@@ -35,9 +38,31 @@ jobs:
           project = publisher.modrinth(f'/project/{project_id}', token)
           assert project['id'] == project_id and project['title'] == 'Vultrum'
           versions = publisher.project_versions(project_id, token)
+          ordered = sorted(versions, key=lambda item: item['date_published'])
+          assert [item['version_number'] for item in ordered] == [
+              f'0.1.0-alpha.{number}+mc26.3' for number in range(1, 10)]
+          assert all(item['id'] != '5oyzZdaD' for item in versions)
           print('VERSIONS=' + json.dumps([
               {key: item[key] for key in ('id', 'name', 'version_number', 'date_published')}
-              for item in sorted(versions, key=lambda item: item['date_published'])]))
+              for item in ordered]))
+          payload = {
+              'description': 'More FPS with shader packs and smoother chunk loading for Minecraft 26.3 on Vulkan. A Sodium add-on for Fabric.',
+              'body': Path('.github/modrinth-description.md').read_text(encoding='utf-8')}
+          request = urllib.request.Request(
+              publisher.API + f'/project/{project_id}', method='PATCH',
+              data=json.dumps(payload).encode('utf-8'),
+              headers={'User-Agent': publisher.USER_AGENT, 'Authorization': token,
+                       'Content-Type': 'application/json'})
+          try:
+              with urllib.request.build_opener(publisher.NoRedirect).open(request, timeout=90) as response:
+                  assert response.status == 204
+          except urllib.error.HTTPError as error:
+              raise SystemExit(f'PROJECT_UPDATE_BLOCKED: HTTP {error.code}; description prepared for manual use.') from None
+          stored = publisher.modrinth(f'/project/{project_id}', token)
+          assert all(stored[key] == value for key, value in payload.items())
+          assert stored['gallery'] == project['gallery']
+          assert stored['status'] == project['status']
+          print('PROJECT_UPDATE_VERIFIED: description and body match; gallery and moderation status preserved.')
           print('PROJECT_CONTENT=' + json.dumps({
-              key: project.get(key) for key in ('id', 'status', 'description', 'body', 'gallery')}))
+              key: stored.get(key) for key in ('id', 'status', 'description', 'body', 'gallery')}))
           PY
