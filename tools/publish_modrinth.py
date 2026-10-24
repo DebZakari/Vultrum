@@ -178,9 +178,10 @@ def mirror(tag, project_id, token, dry_run):
     project = modrinth(f"/project/{project_id}", token)
     if project.get("id") != project_id or project.get("project_type") != "mod" or project.get("title") != "Vultrum":
         raise PublishError("MODRINTH_PROJECT_ID does not identify the Vultrum mod project.")
-    if project.get("status") != "approved":
-        report("Deferred: the Modrinth project is not approved for public releases. After approval, run this workflow manually for the desired tag.")
+    if project.get("status") not in ("approved", "processing"):
+        report("Deferred: the Modrinth project must be approved or under review before mirroring releases.")
         return
+    report(f"Project status: {project['status']}. Mirroring preserves the project's moderation status.")
     dependencies = []
     for slug, kind in DEPENDENCIES.items():
         dependency = modrinth(f"/project/{slug}", token)

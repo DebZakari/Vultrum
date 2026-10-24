@@ -1,4 +1,4 @@
-"""Checks for release identity, retry safety and the review hold."""
+"""Checks for release identity, retry safety and project status guards."""
 
 import copy
 import hashlib
@@ -128,13 +128,24 @@ class PublisherTest(unittest.TestCase):
 
         return gh, modrinth
 
-    def test_review_hold_performs_no_download_or_upload(self):
+    def test_other_project_states_perform_no_download_or_upload(self):
+        for status in ("draft", "rejected", "withheld", "archived", "unlisted", "scheduled", "unknown", None):
+            with self.subTest(status=status):
+                gh, api = self.mock_services(status=status)
+                with patch.object(publisher, "gh", side_effect=gh) as github, \
+                        patch.object(publisher, "modrinth", side_effect=api) as modrinth:
+                    publisher.mirror(self.tag, "LV34xpJ5", "test-token", False)
+                self.assertEqual(github.call_count, 1)
+                self.assertEqual(modrinth.call_count, 1)
+
+    def test_under_review_uploads_and_verifies_without_modifying_project(self):
         gh, api = self.mock_services(status="processing")
-        with patch.object(publisher, "gh", side_effect=gh) as github, \
+        with patch.object(publisher, "gh", side_effect=gh), \
                 patch.object(publisher, "modrinth", side_effect=api) as modrinth:
             publisher.mirror(self.tag, "LV34xpJ5", "test-token", False)
-        self.assertEqual(github.call_count, 1)
-        self.assertEqual(modrinth.call_count, 1)
+        writes = [call.args[0] for call in modrinth.call_args_list if len(call.args) > 2]
+        self.assertEqual(writes, ["/version"])
+        self.assertEqual(modrinth.call_args_list[-1].args[0], "/version/12345678")
 
     def test_dry_run_performs_no_upload(self):
         gh, api = self.mock_services()
