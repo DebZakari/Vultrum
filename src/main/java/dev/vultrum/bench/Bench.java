@@ -50,7 +50,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -76,7 +75,7 @@ public final class Bench {
     private enum Sweep { OFF, MOVING, AT_A, AT_B, FLYING }
 
     private static final double WORLD_TIMEOUT_S = 600, LOCATE_TIMEOUT_S = 300, COLUMN_TIMEOUT_S = 120, TERRAIN_TIMEOUT_S = 300;
-    private static final double DRAIN_TIMEOUT_S = 2, HOLD_MIN_S = 1, HOLD_TIMEOUT_S = 10, FLY_END_TIMEOUT_S = 60, QUIT_TIMEOUT_S = 5;
+    private static final double HOLD_MIN_S = 1, HOLD_TIMEOUT_S = 10, FLY_END_TIMEOUT_S = 60, QUIT_TIMEOUT_S = 5;
     private static final double TERRAIN_MIN_S = 5;
     // The longest a case waits for Sodium's builds to go quiet (Scenario.quietBuildsSeconds), after the terrain wait.
     static final double BUILDS_TIMEOUT_S = 60;
@@ -113,11 +112,11 @@ public final class Bench {
     private Map<String, Object> cullStats, packetStats;
     // The reclaim thread's batches since the current load started, and the recording window.
     private final List<ReclaimThread.Batch> reclaimBatches = new ArrayList<>();
-    private long recordStart, recordEnd;
     // Load timing (the join, or a case's teleport): its start, and the streak of ticks with terrain complete.
     private boolean loadRunning;
     private long loadStart, loadStreakStart;
-    private int loadTicks, loadStreakFrames, loadStreakPending, targetChunkX, targetChunkZ;
+    private int loadTicks, targetChunkX, targetChunkZ;
+    private Measurements.LoadMark loadStreak;
     private Map<String, Object> loadStreakBudget;
     private double joinLevelS = -1;
     // When the join's load ended, while its terrain settles before the first case; -1 otherwise.
@@ -384,7 +383,6 @@ public final class Bench {
                     unfocused = !focused(mc);
                     pose = pose(mc);
                     FrameTimer.startRecording();
-                    recordStart = System.nanoTime();
                     buildsAtRecord = Builds.count();
                     GpuOcclusionCull.resetStats();
                     PacketBudget.resetStats();
@@ -398,7 +396,6 @@ public final class Bench {
                 focusLost |= (!unfocused && !focused(mc)) || mc.gui.screen() != null;
                 if (seconds() >= scenario.recordSeconds()) {
                     FrameTimer.stopRecording();
-                    recordEnd = System.nanoTime();
                     buildsRecorded = Builds.count() - buildsAtRecord;
                     cullStats = GpuOcclusionCull.stats();
                     packetStats = PacketBudget.stats();
@@ -407,7 +404,7 @@ public final class Bench {
                 }
             }
             case DRAIN -> {
-                if (!FrameTimer.drained() && seconds() < DRAIN_TIMEOUT_S) return;
+                if (!FrameTimer.finishRecording()) return;
                 moved = sweep == Sweep.OFF && !samePose(pose, pose(mc));
                 if ((focusLost || moved) && ++attempt < MAX_ATTEMPTS) {
                     VultrumClient.LOGGER.warn("[bench] {} {}; re-recording ({}/{})", cases.get(caseIndex).id(),
@@ -539,6 +536,7 @@ public final class Bench {
         loadRunning = true;
         loadStart = System.nanoTime();
         loadTicks = 0;
+        loadStreak = null;
         FrameTimer.startLoad();
         PacketBudget.resetStats();
         ReclaimThread.client().drainBatches(reclaimBatches);
@@ -560,8 +558,7 @@ public final class Bench {
         if (loadTicks++ == 0) {
             loadStreakStart = System.nanoTime();
             // Frames, packets, chunk events and the reclaim come in step, one of each a render.
-            loadStreakFrames = FrameTimer.loadFrameMs.size();
-            loadStreakPending = FrameTimer.loadColumnsPendingMax;
+            loadStreak = FrameTimer.markLoad();
             loadStreakBudget = PacketBudget.stats();
         }
         // Sodium reports complete while it has nothing to build, which is also the case before it has taken in a
@@ -569,7 +566,7 @@ public final class Bench {
         // streak must span frames. After a long frame up to 10 ticks run in one, and after a frame of over a second
         // (a join's first) the ticks and the second can both pass within two.
         return loadTicks >= LOAD_TICKS && System.nanoTime() - loadStreakStart >= LOAD_TICKS * 50_000_000L
-                && FrameTimer.loadFrameMs.size() - loadStreakFrames >= LOAD_TICKS;
+                && FrameTimer.framesSince(loadStreak) >= LOAD_TICKS;
     }
 
     /** Ends the current case's load once it has loaded, or when the terrain wait ends ({@code force}). */
@@ -592,31 +589,13 @@ public final class Bench {
      */
     private Map<String, Object> endLoad(String name) {
         loadRunning = false;
-        FrameTimer.stopLoad();
         boolean complete = loadTicks > 0;
         if (!complete) VultrumClient.LOGGER.warn("[bench] {} load ended before its terrain was complete", name);
         long end = complete ? loadStreakStart : System.nanoTime();
-        double[] frames = FrameTimer.loadFrameMs.toDoubleArray(), packets = FrameTimer.loadPacketsMs.toDoubleArray(),
-                chunkEvents = FrameTimer.loadChunkEventsMs.toDoubleArray(), reclaim = FrameTimer.loadReclaimMs.toDoubleArray();
-        if (complete) {
-            frames = Arrays.copyOf(frames, loadStreakFrames);
-            packets = Arrays.copyOf(packets, loadStreakFrames);
-            chunkEvents = Arrays.copyOf(chunkEvents, loadStreakFrames);
-            reclaim = Arrays.copyOf(reclaim, loadStreakFrames);
-        }
-        var load = new LinkedHashMap<String, Object>();
+        var load = new LinkedHashMap<String, Object>(FrameTimer.finishLoad(complete ? loadStreak : null));
         load.put("seconds", round((end - loadStart) / 1e9));
         load.put("complete", complete);
-        var frameStats = Stats.of(frames);
-        load.put("frameMs", frameStats.toMap());
-        load.put("fps1Low", Stats.round(Stats.lowFps(frames, 0.01)));
-        load.put("fps01Low", Stats.round(Stats.lowFps(frames, 0.001)));
-        load.put("hitches", Stats.hitchFrames(frames, frameStats.p50()).length);
-        load.put("packetsMs", Stats.of(packets).toMap());
-        load.put("chunkEventsMs", Stats.of(chunkEvents).toMap());
-        load.put("reclaimMs", Stats.of(reclaim).toMap());
-        load.put("reclaimThread", reclaimThread(loadStart, end, null, null));
-        load.put("columnsPendingMax", complete ? loadStreakPending : FrameTimer.loadColumnsPendingMax);
+        load.put("reclaimThread", reclaimThread(loadStart, end, null));
         load.put("packetBudget", complete ? loadStreakBudget : PacketBudget.stats());
         return load;
     }
@@ -899,9 +878,9 @@ public final class Bench {
     /**
      * The reclaim thread's work from {@code from} to {@code to} (System.nanoTime), null while it is off: the
      * reclaims that took a reference, their references and time, and each of 1,000 references or more as [wall-clock
-     * start in epoch ms, ms, references], plus the longest frame it overlapped when {@code frames} is given.
+     * start in epoch ms, ms, references], plus the longest frame it overlapped when a recording is given.
      */
-    private Map<String, Object> reclaimThread(long from, long to, double[] frames, double[] frameStarts) {
+    private Map<String, Object> reclaimThread(long from, long to, Measurements.Snapshot recording) {
         if (!ReclaimThread.on()) return null;
         ReclaimThread.client().drainBatches(reclaimBatches);
         int reclaims = 0;
@@ -918,7 +897,7 @@ public final class Bench {
             if (batch.refs() < 1000 || listed.size() >= 32) continue;
             double start = FrameTimer.epochMs(batch.startNanos());
             var entry = new ArrayList<Object>(List.of(Math.round(start), round(batchMs), batch.refs()));
-            if (frames != null) entry.add(worstFrame(frames, frameStarts, start, start + batchMs));
+            if (recording != null) entry.add(recording.worstFrame(start, start + batchMs));
             listed.add(entry);
         }
         var stats = new LinkedHashMap<String, Object>();
@@ -930,70 +909,16 @@ public final class Bench {
         return stats;
     }
 
-    /** The longest recorded frame that overlaps a span of wall-clock time, or null if none does. */
-    private static Double worstFrame(double[] frames, double[] frameStarts, double startEpochMs, double endEpochMs) {
-        double worst = -1;
-        for (int i = 0; i < frames.length && i < frameStarts.length; i++)
-            if (frameStarts[i] < endEpochMs && frameStarts[i] + frames[i] > startEpochMs) worst = Math.max(worst, frames[i]);
-        return worst < 0 ? null : round(worst);
-    }
-
     private void finishCase(Minecraft mc) {
         var current = cases.get(caseIndex);
-        double[] frames = FrameTimer.frameMs.toDoubleArray();
+        var recording = FrameTimer.recording();
         var result = new LinkedHashMap<String, Object>();
         result.put("id", current.id());
         result.put("viewpoint", current.viewpoint().name());
         result.put("renderDistance", current.renderDistance());
         result.put("position", List.of(round(mc.player.getX()), round(mc.player.getY()), round(mc.player.getZ())));
-        result.put("fpsAvg", Stats.round(Stats.averageFps(frames)));
-        result.put("fps1Low", Stats.round(Stats.lowFps(frames, 0.01)));
-        result.put("fps01Low", Stats.round(Stats.lowFps(frames, 0.001)));
-        var frameStats = Stats.of(frames);
-        result.put("frameMs", frameStats.toMap());
-        var hitchBreakdown = hitchBreakdown(frames, frameStats.p50());
-        result.put("frameHitches", hitchBreakdown.get("count"));
-        result.put("renderCpuMs", Stats.of(FrameTimer.renderCpuMs.toDoubleArray()).toMap());
-        result.put("extractCpuMs", Stats.of(FrameTimer.extractCpuMs.toDoubleArray()).toMap());
-        result.put("terrainSetupCpuMs", Stats.of(FrameTimer.setupCpuMs.toDoubleArray()).toMap());
-        var phases = new LinkedHashMap<String, Object>();
-        var phaseMs = new LinkedHashMap<String, double[]>();
-        for (var phase : FrameTimer.SetupPhase.values()) {
-            double[] ms = FrameTimer.setupPhaseMs[phase.ordinal()].toDoubleArray();
-            phaseMs.put(phase.key, ms);
-            phases.put(phase.key, Stats.of(ms).toMap());
-        }
-        result.put("terrainSetupPhasesMs", phases);
-        // The references Sodium's reclaim polled: all of them, the most in one frame, and the frames that polled any.
-        double[] reclaimed = FrameTimer.reclaimedRefs.toDoubleArray();
-        var refs = new LinkedHashMap<String, Object>();
-        refs.put("total", (long) Arrays.stream(reclaimed).sum());
-        refs.put("max", (long) Arrays.stream(reclaimed).max().orElse(0));
-        refs.put("frames", Arrays.stream(reclaimed).filter(count -> count > 0).count());
-        result.put("reclaimedRefs", refs);
-        result.put("reclaimThread", reclaimThread(recordStart, recordEnd, frames, FrameTimer.frameStartEpochMs.toDoubleArray()));
-        double[] setups = FrameTimer.setupCpuMs.toDoubleArray();
-        result.put("longSetupCount", LongSetups.count(setups));
-        result.put("longSetups", LongSetups.of(frames, FrameTimer.frameStartEpochMs.toDoubleArray(), setups, phaseMs, reclaimed, FrameTimer.gpuFrameMs.toDoubleArray()));
-        var loop = new LinkedHashMap<String, Object>();
-        // Null for a phase never timed (an optional wrap that didn't apply), rather than zeros.
-        for (var phase : FrameTimer.LoopPhase.values())
-            loop.put(phase.key, FrameTimer.timed(phase) ? Stats.of(FrameTimer.loopPhaseMs[phase.ordinal()].toDoubleArray()).toMap() : null);
-        result.put("frameLoopPhasesMs", loop);
-        result.put("hitchBreakdownMs", hitchBreakdown);
-        var columns = new LinkedHashMap<String, Object>();
-        columns.put("added", Stats.of(FrameTimer.addedColumns.toDoubleArray()).toMap());
-        columns.put("removed", Stats.of(FrameTimer.removedColumns.toDoubleArray()).toMap());
-        columns.put("pending", Stats.of(FrameTimer.pendingColumns.toDoubleArray()).toMap());
-        result.put("chunkColumns", columns);
-        result.put("terrainDrawCpuMs", Stats.of(FrameTimer.drawCpuMs.toDoubleArray()).toMap());
-        result.put("lateRenderListsCpuMs", Stats.of(FrameTimer.lateListsCpuMs.toDoubleArray()).toMap());
-        result.put("gpuFrameMs", Stats.of(FrameTimer.gpuFrameMs.toDoubleArray()).toMap());
-        result.put("gpuTerrainMs", Stats.of(FrameTimer.gpuTerrainMs.toDoubleArray()).toMap());
-        result.put("gpuDropped", FrameTimer.gpuDropped());
-        result.put("gpuSpanOverflow", FrameTimer.gpuOverflowed());
-        var terrainStats = FrameTimer.terrainStats();
-        if (terrainStats != null) result.put("terrainStats", terrainStats);
+        result.putAll(recording.metrics());
+        result.put("reclaimThread", reclaimThread(recording.startNanos(), recording.endNanos(), recording));
         if (current.viewpoint().motion() != null) result.put("motion", current.viewpoint().motion());
         if (current.viewpoint().fly() != null) result.put("fly", current.viewpoint().fly());
         result.put("packetBudget", packetStats);
@@ -1032,40 +957,10 @@ public final class Bench {
         results.add(result);
         VultrumClient.LOGGER.info("[bench] {} fps={} 1%low={} gpuFrame={} gpuTerrain={} terrainCpu={}+{}",
                 current.id(), result.get("fpsAvg"), result.get("fps1Low"),
-                Stats.round(Stats.of(FrameTimer.gpuFrameMs.toDoubleArray()).mean()),
-                Stats.round(Stats.of(FrameTimer.gpuTerrainMs.toDoubleArray()).mean()),
-                Stats.round(Stats.of(FrameTimer.setupCpuMs.toDoubleArray()).mean()),
-                Stats.round(Stats.of(FrameTimer.drawCpuMs.toDoubleArray()).mean()));
-    }
-
-    /**
-     * Mean CPU split of the hitch frames. Frame interval i runs from render i to render i + 1: render
-     * i (with the terrain draws and Vitrail's shadow walk), then the loop phases (submit and present,
-     * packets, tasks, ticks, acquire, the light queue and engine), then extract i + 1 (with the terrain setup).
-     */
-    private static Map<String, Object> hitchBreakdown(double[] frames, double medianMs) {
-        double[] extract = FrameTimer.extractCpuMs.toDoubleArray();
-        // endFrame records one more extract than there are frame intervals, so this keeps every hitch.
-        int[] hitches = Arrays.stream(Stats.hitchFrames(frames, medianMs)).filter(i -> i + 1 < extract.length).toArray();
-        var breakdown = new LinkedHashMap<String, Object>();
-        breakdown.put("count", hitches.length);
-        double[] starts = FrameTimer.frameStartEpochMs.toDoubleArray();
-        breakdown.put("startsEpochMs", Arrays.stream(hitches).mapToObj(i -> Math.round(starts[i])).toList());
-        breakdown.put("framesMs", Arrays.stream(hitches).mapToObj(i -> Stats.round(frames[i])).toList());
-        breakdown.put("frame", Stats.round(Stats.meanAt(frames, hitches, 0)));
-        breakdown.put("render", Stats.round(Stats.meanAt(FrameTimer.renderCpuMs.toDoubleArray(), hitches, 0)));
-        breakdown.put("terrainDraw", Stats.round(Stats.meanAt(FrameTimer.drawCpuMs.toDoubleArray(), hitches, 0)));
-        breakdown.put("lateRenderLists", Stats.round(Stats.meanAt(FrameTimer.lateListsCpuMs.toDoubleArray(), hitches, 0)));
-        breakdown.put("extract", Stats.round(Stats.meanAt(extract, hitches, 1)));
-        breakdown.put("terrainSetup", Stats.round(Stats.meanAt(FrameTimer.setupCpuMs.toDoubleArray(), hitches, 1)));
-        for (var phase : FrameTimer.SetupPhase.values())
-            breakdown.put(phase.key, Stats.round(Stats.meanAt(FrameTimer.setupPhaseMs[phase.ordinal()].toDoubleArray(), hitches, 1)));
-        for (var phase : FrameTimer.LoopPhase.values())
-            breakdown.put(phase.key, FrameTimer.timed(phase) ? Stats.round(Stats.meanAt(FrameTimer.loopPhaseMs[phase.ordinal()].toDoubleArray(), hitches, 1)) : null);
-        breakdown.put("columnsAdded", Stats.round(Stats.meanAt(FrameTimer.addedColumns.toDoubleArray(), hitches, 1)));
-        breakdown.put("columnsRemoved", Stats.round(Stats.meanAt(FrameTimer.removedColumns.toDoubleArray(), hitches, 1)));
-        breakdown.put("columnsPending", Stats.round(Stats.meanAt(FrameTimer.pendingColumns.toDoubleArray(), hitches, 1)));
-        return breakdown;
+                recording.mean("gpuFrameMs"),
+                recording.mean("gpuTerrainMs"),
+                recording.mean("terrainSetupCpuMs"),
+                recording.mean("terrainDrawCpuMs"));
     }
 
     private void writeResults(Minecraft mc, String status) {

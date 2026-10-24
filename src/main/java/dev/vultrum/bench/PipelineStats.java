@@ -11,140 +11,129 @@ import dev.vultrum.mixin.VulkanDeviceAccessor;
 import dev.vultrum.mixin.VulkanRenderPassAccessor;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
-import org.lwjgl.vulkan.VkCommandBuffer;
-import org.lwjgl.vulkan.VkDevice;
-import org.lwjgl.vulkan.VkQueryPoolCreateInfo;
+import org.lwjgl.vulkan.*;
 
 import java.nio.LongBuffer;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.function.Consumer;
 
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK12.vkResetQueryPool;
 
-/**
- * Vulkan pipeline-statistics queries around each terrain draw call ({@code drawChunkLayer}), for
- * benchmark runs with -Dvultrum.bench.stats=true. Fragment-shader invocations divided by the
- * framebuffer's pixels is terrain overdraw; fragments per primitive shows how small the triangles
- * are; vertex invocations is the geometry load. Same frame ring and reuse rule as {@link GpuTimer}.
- * The device feature comes from {@code VulkanFeatureSetsMixin}.
- *
- * <p>Under Vitrail only shadow-pass calls are counted: Vitrail hands Sodium a lazy pass and opens the real
- * main pass inside {@code drawChunkLayer}, and a query must begin and end inside one render pass instance.
- */
+/** Diagnostic terrain-query transport; results retain their frame and recording identity until collected. */
 final class PipelineStats {
-    /** Result order follows the flag bits, lowest first. */
     static final String[] NAMES = {"iaPrimitives", "vsInvocations", "clipInvocations", "clipPrimitives", "fsInvocations"};
     private static final int FLAGS = VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_PRIMITIVES_BIT
             | VK_QUERY_PIPELINE_STATISTIC_VERTEX_SHADER_INVOCATIONS_BIT | VK_QUERY_PIPELINE_STATISTIC_CLIPPING_INVOCATIONS_BIT
             | VK_QUERY_PIPELINE_STATISTIC_CLIPPING_PRIMITIVES_BIT | VK_QUERY_PIPELINE_STATISTIC_FRAGMENT_SHADER_INVOCATIONS_BIT;
     private static final int RING = 8, MAX_CALLS = 16;
-
-    private final VkDevice device;
-    private final long pool;
-    private final LongBuffer results = MemoryUtil.memAllocLong(MAX_CALLS * NAMES.length);
-    private final int[] calls = new int[RING];
-    private final String[][] groups = new String[RING][MAX_CALLS];
-    private final boolean[] pending = new boolean[RING], recorded = new boolean[RING];
-    /** "ordinal group" -> sums of each statistic, then the frame count in the last slot. */
-    private final Map<String, double[]> sums = new LinkedHashMap<>();
-    private int slot = -1;
-    private VkCommandBuffer open;
-
-    private PipelineStats(VkDevice device, long pool) {
-        this.device = device;
-        this.pool = pool;
+    record Call(int ordinal, String group, long[] values) {}
+    record Sample(long frame, long window, List<Call> calls, long dropped) {}
+    interface Queries {
+        boolean begin(int query, RenderPass pass);
+        void end(int query);
+        /** Null until all results are available. Errors must propagate without resetting pending queries. */
+        long[] read(int first, int count);
+        void reset(int first, int count);
     }
 
-    /** Null when the device lacks the feature or the backend isn't Vulkan. */
+    private final Queries queries;
+    private final int[] calls = new int[RING];
+    private final String[][] groups = new String[RING][MAX_CALLS];
+    private final boolean[] pending = new boolean[RING];
+    private final long[] frames = new long[RING], windows = new long[RING], dropped = new long[RING];
+    private int slot = -1;
+    private boolean open;
+
+    PipelineStats(Queries queries) { this.queries = queries; }
+
+    /** Under Vitrail's lazy main pass, only shadow draws expose an actual Vulkan pass here. */
     static PipelineStats create() {
         if (!(((FrontendGpuDeviceAccessor) RenderSystem.getDevice()).vultrum$backend() instanceof VulkanDevice vulkan)
                 || !((VulkanDeviceAccessor) vulkan).vultrum$enabledFeatures().contains(VultrumFeatures.PIPELINE_STATISTICS)) {
             VultrumClient.LOGGER.warn("[bench] pipeline statistics unavailable on this device");
             return null;
         }
-        VkDevice device = vulkan.vkDevice();
+        var device = vulkan.vkDevice();
         try (MemoryStack stack = MemoryStack.stackPush()) {
             var info = VkQueryPoolCreateInfo.calloc(stack).sType$Default()
                     .queryType(VK_QUERY_TYPE_PIPELINE_STATISTICS).queryCount(RING * MAX_CALLS).pipelineStatistics(FLAGS);
-            LongBuffer handle = stack.mallocLong(1);
+            var handle = stack.mallocLong(1);
             if (vkCreateQueryPool(device, info, null, handle) != VK_SUCCESS) return null;
             vkResetQueryPool(device, handle.get(0), 0, RING * MAX_CALLS);
-            return new PipelineStats(device, handle.get(0));
+            return new PipelineStats(new DeviceQueries(device, handle.get(0)));
         }
     }
 
-    void beginFrame(long frame, boolean record) {
-        slot = (int) (frame % RING);
-        if (pending[slot]) vkResetQueryPool(device, pool, slot * MAX_CALLS, calls[slot]);
-        pending[slot] = false;
-        recorded[slot] = record;
-        calls[slot] = 0;
+    void beginFrame(long frame, long window, Consumer<Sample> sink) {
+        int next = (int) (frame % RING);
+        slot = -1;
+        if (pending[next]) {
+            sink.accept(new Sample(frame, window, List.of(), 1));
+            return;
+        }
+        slot = next;
+        frames[slot] = frame; windows[slot] = window;
+        calls[slot] = 0; dropped[slot] = 0;
     }
-
     void begin(RenderPass pass, String group) {
-        if (slot < 0 || open != null || calls[slot] == MAX_CALLS) return;
-        if (!(pass instanceof FrontendRenderPassAccessor frontend)
-                || !(frontend.vultrum$backend() instanceof VulkanRenderPass vulkan)) return;
-        open = ((VulkanRenderPassAccessor) vulkan).vultrum$commandBuffer();
+        if (slot < 0 || open) return;
+        if (calls[slot] == MAX_CALLS) { dropped[slot]++; return; }
+        if (!queries.begin(slot * MAX_CALLS + calls[slot], pass)) return;
+        open = true;
         groups[slot][calls[slot]] = group;
-        vkCmdBeginQuery(open, pool, slot * MAX_CALLS + calls[slot], 0);
     }
-
     void end() {
-        if (open == null) return;
-        vkCmdEndQuery(open, pool, slot * MAX_CALLS + calls[slot]++);
-        open = null;
+        if (!open) return;
+        queries.end(slot * MAX_CALLS + calls[slot]++);
+        open = false;
     }
-
-    void endFrame() {
+    void endFrame(Consumer<Sample> sink) {
         if (slot < 0) return;
         end();
         pending[slot] = calls[slot] > 0;
+        if (!pending[slot]) sink.accept(new Sample(frames[slot], windows[slot], List.of(), dropped[slot]));
         slot = -1;
     }
-
-    /** Reads every finished frame without waiting, then resets its queries for reuse. */
-    void collect() {
+    void collect(Consumer<Sample> sink) {
         for (int s = 0; s < RING; s++) {
             if (!pending[s] || s == slot) continue;
-            int n = calls[s];
-            results.clear();
-            int status = vkGetQueryPoolResults(device, pool, s * MAX_CALLS, n, results, (long) NAMES.length * Long.BYTES, VK_QUERY_RESULT_64_BIT);
-            if (status == VK_NOT_READY) continue;
+            long[] values = queries.read(s * MAX_CALLS, calls[s]);
+            if (values == null) continue;
+            queries.reset(s * MAX_CALLS, calls[s]);
             pending[s] = false;
-            vkResetQueryPool(device, pool, s * MAX_CALLS, n);
-            if (status != VK_SUCCESS || !recorded[s]) continue;
-            for (int call = 0; call < n; call++) {
-                double[] sum = sums.computeIfAbsent(call + " " + groups[s][call], k -> new double[NAMES.length + 1]);
-                for (int i = 0; i < NAMES.length; i++) sum[i] += results.get(call * NAMES.length + i);
-                sum[NAMES.length]++;
-            }
+            var result = new ArrayList<Call>();
+            for (int call = 0; call < calls[s]; call++)
+                result.add(new Call(call, groups[s][call],
+                        java.util.Arrays.copyOfRange(values, call * NAMES.length, (call + 1) * NAMES.length)));
+            sink.accept(new Sample(frames[s], windows[s], result, dropped[s]));
         }
     }
 
-    boolean hasPendingRecorded() {
-        for (int s = 0; s < RING; s++) if (pending[s] && recorded[s]) return true;
-        return false;
-    }
-
-    void clear() { sums.clear(); }
-
-    /** Per-frame means for each terrain draw call, in call order. */
-    List<Map<String, Object>> results() {
-        var list = new ArrayList<Map<String, Object>>();
-        for (var entry : sums.entrySet()) {
-            double[] sum = entry.getValue();
-            var row = new LinkedHashMap<String, Object>();
-            String[] key = entry.getKey().split(" ", 2);
-            row.put("call", Integer.parseInt(key[0]));
-            row.put("group", key[1]);
-            for (int i = 0; i < NAMES.length; i++) row.put(NAMES[i], Math.round(sum[i] / sum[NAMES.length]));
-            row.put("frames", (long) sum[NAMES.length]);
-            list.add(row);
+    private static final class DeviceQueries implements Queries {
+        private final VkDevice device;
+        private final long pool;
+        private final LongBuffer results = MemoryUtil.memAllocLong(MAX_CALLS * NAMES.length);
+        private VkCommandBuffer open;
+        DeviceQueries(VkDevice device, long pool) { this.device = device; this.pool = pool; }
+        public boolean begin(int query, RenderPass pass) {
+            if (!(pass instanceof FrontendRenderPassAccessor frontend)
+                    || !(frontend.vultrum$backend() instanceof VulkanRenderPass vulkan)) return false;
+            open = ((VulkanRenderPassAccessor) vulkan).vultrum$commandBuffer();
+            vkCmdBeginQuery(open, pool, query, 0);
+            return true;
         }
-        return list;
+        public void end(int query) { vkCmdEndQuery(open, pool, query); open = null; }
+        public long[] read(int first, int count) {
+            results.clear();
+            int status = vkGetQueryPoolResults(device, pool, first, count, results, (long) NAMES.length * Long.BYTES, VK_QUERY_RESULT_64_BIT);
+            if (status == VK_NOT_READY) return null;
+            if (status != VK_SUCCESS) throw new IllegalStateException("Pipeline statistics query failed: " + status);
+            var copy = new long[count * NAMES.length];
+            results.get(0, copy);
+            return copy;
+        }
+        public void reset(int first, int count) { vkResetQueryPool(device, pool, first, count); }
     }
 }

@@ -175,6 +175,17 @@ class Run:
             for key in ("gpuDropped", "gpuSpanOverflow"):
                 if case.get(key) != 0:
                     reasons.append(prefix + f"{key} invalid or unknown")
+            # Historical runs lack this field. New collectors explicitly seal a recording after its drain deadline.
+            if "measurement" in case:
+                measurement = case["measurement"]
+                if (not isinstance(measurement, dict) or measurement.get("complete") is not True
+                        or measurement.get("drainTimedOut") is not False
+                        or any(measurement.get(key) != 0 for key in ("gpuMissing", "pipelineMissing", "pipelineDropped"))
+                        or not isinstance(measurement.get("gpuExpected"), int) or measurement["gpuExpected"] <= 0
+                        or measurement.get("gpuReceived") != measurement["gpuExpected"]
+                        or not isinstance(measurement.get("pipelineExpected"), int) or measurement["pipelineExpected"] < 0
+                        or measurement.get("pipelineReceived") != measurement["pipelineExpected"]):
+                    reasons.append(prefix + "measurement incomplete or invalid")
             if case.get("occlusionCull") is not None and get(case, ("occlusionCull", "broken")) is not False:
                 reasons.append(prefix + "cull failed or unknown")
             for key in _case_identity(case):

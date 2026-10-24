@@ -69,6 +69,25 @@ class EvidenceTest(unittest.TestCase):
         self.assertEqual(len(report.expected_changes), 1)
         self.assertFalse(assess(control, candidate, expected={"properties.experiment": (None, "false")}).eligible)
 
+    def test_measurement_completion_is_required_when_collector_reports_it(self):
+        complete = {"complete": True, "drainTimedOut": False, "gpuExpected": 10, "gpuReceived": 10,
+                    "gpuMissing": 0, "pipelineExpected": 0, "pipelineReceived": 0,
+                    "pipelineMissing": 0, "pipelineDropped": 0}
+        a, b = self.run_file(), self.run_file()
+        b.results["cases"][0]["measurement"] = complete.copy()
+        self.assertTrue(assess(a, b).eligible)  # historical archives without this field retain their rules
+        for change in ({"complete": False}, {"drainTimedOut": True}, {"gpuMissing": 1},
+                       {"gpuReceived": 9}, {"gpuExpected": 0}, {"pipelineMissing": 1},
+                       {"pipelineDropped": 1}, {"pipelineExpected": 1}, {"complete": 1}):
+            with self.subTest(change=change):
+                b.results["cases"][0]["measurement"] = {**complete, **change}
+                report = assess(a, b)
+                self.assertFalse(report.eligible)
+                self.assertTrue(any("measurement incomplete" in reason for reason in report.exclusions))
+        for invalid in (None, {}, "complete"):
+            b.results["cases"][0]["measurement"] = invalid
+            self.assertFalse(assess(a, b).eligible)
+
     def test_tag_correctness_checks_are_excluded_even_when_both_runs_enable_them(self):
         for value in ("true", "off"):
             a, b = self.run_file(), self.run_file()

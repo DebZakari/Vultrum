@@ -2,47 +2,39 @@ package dev.vultrum.bench;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.api.commands.GpuQueryPool;
-
 import java.util.OptionalLong;
+import java.util.function.Consumer;
 
-/**
- * GPU timestamps through renderpearl's public query API. Each in-flight frame owns a block of queries:
- * [0] frame start, [1] frame end, then begin/end pairs around terrain draws. A block is reused
- * {@link #RING} frames later. By then its submit has completed, so the host-side reset that
- * {@code writeTimestamp} performs is safe.
- */
+/** Timestamp transport. Pending slots belong to their original frame until query results are available. */
 final class GpuTimer {
-    record Sample(double frameMs, double terrainMs, boolean recorded) { }
-
-    private static final int RING = 8;
-    private static final int QUERIES = 32;
-    private static final int MAX_SPANS = (QUERIES - 2) / 2;
-
-    private final GpuQueryPool pool;
+    record Sample(long frame, long window, double frameMs, double terrainMs, long dropped, long overflowed) {}
+    interface Queries {
+        void write(int query);
+        OptionalLong[] read(int first, int count);
+    }
+    private static final int RING = 8, QUERIES = 32, MAX_SPANS = (QUERIES - 2) / 2;
+    private final Queries queries;
     private final double msPerTick;
     private final boolean[] pending = new boolean[RING];
-    private final boolean[] recorded = new boolean[RING];
+    private final long[] frames = new long[RING], windows = new long[RING], overflow = new long[RING];
     private final int[] spans = new int[RING];
     private int slot = -1;
     private boolean spanOpen;
-    long dropped, overflowed;
-
-    GpuTimer() {
-        var device = RenderSystem.getDevice();
-        pool = device.createTimestampQueryPool(RING * QUERIES);
-        msPerTick = device.getDeviceInfo().timestampPeriod() / 1_000_000.0;
-    }
-
-    void beginFrame(long frame, boolean record) {
-        slot = (int) (frame % RING);
-        if (pending[slot]) ++dropped;
-        pending[slot] = false;
-        recorded[slot] = record;
-        spans[slot] = 0;
+    GpuTimer() { this(new DeviceQueries(), RenderSystem.getDevice().getDeviceInfo().timestampPeriod() / 1_000_000.0); }
+    GpuTimer(Queries queries, double msPerTick) { this.queries = queries; this.msPerTick = msPerTick; }
+    void beginFrame(long frame, long window, Consumer<Sample> sink) {
+        int next = (int) (frame % RING);
+        slot = -1;
         spanOpen = false;
+        if (pending[next]) {
+            sink.accept(new Sample(frame, window, Double.NaN, Double.NaN, 1, 0));
+            return;
+        }
+        slot = next;
+        frames[slot] = frame; windows[slot] = window;
+        spans[slot] = 0; overflow[slot] = 0;
         write(0);
     }
-
     void endFrame() {
         if (slot < 0) return;
         if (spanOpen) endSpan();
@@ -50,43 +42,36 @@ final class GpuTimer {
         pending[slot] = true;
         slot = -1;
     }
-
     void beginSpan() {
         if (slot < 0 || spanOpen) return;
-        if (spans[slot] == MAX_SPANS) { ++overflowed; return; }
+        if (spans[slot] == MAX_SPANS) { overflow[slot]++; return; }
         write(2 + 2 * spans[slot]);
         spanOpen = true;
     }
-
     void endSpan() {
         if (slot < 0 || !spanOpen) return;
         write(3 + 2 * spans[slot]++);
         spanOpen = false;
     }
-
-    /** Reads every finished frame without waiting. */
-    void collect(java.util.function.Consumer<Sample> sink) {
+    void collect(Consumer<Sample> sink) {
         for (int s = 0; s < RING; s++) {
             if (!pending[s] || s == slot) continue;
-            OptionalLong[] values = pool.getValues(s * QUERIES, 2 + 2 * spans[s]);
+            OptionalLong[] values = queries.read(s * QUERIES, 2 + 2 * spans[s]);
             boolean ready = true;
             for (OptionalLong value : values) ready &= value.isPresent();
             if (!ready) continue;
             pending[s] = false;
-            long frameTicks = values[1].getAsLong() - values[0].getAsLong();
-            long terrainTicks = 0;
+            long frameTicks = values[1].getAsLong() - values[0].getAsLong(), terrainTicks = 0;
             for (int i = 0; i < spans[s]; i++) terrainTicks += values[3 + 2 * i].getAsLong() - values[2 + 2 * i].getAsLong();
-            if (frameTicks < 0 || terrainTicks < 0) { ++dropped; continue; }
-            sink.accept(new Sample(frameTicks * msPerTick, terrainTicks * msPerTick, recorded[s]));
+            boolean valid = frameTicks >= 0 && terrainTicks >= 0;
+            sink.accept(new Sample(frames[s], windows[s], valid ? frameTicks * msPerTick : Double.NaN,
+                    valid ? terrainTicks * msPerTick : Double.NaN, valid ? 0 : 1, overflow[s]));
         }
     }
-
-    boolean hasPendingRecorded() {
-        for (int s = 0; s < RING; s++) if (pending[s] && recorded[s]) return true;
-        return false;
-    }
-
-    private void write(int query) {
-        RenderSystem.getDevice().createCommandEncoder().writeTimestamp(pool, slot * QUERIES + query);
+    private void write(int query) { queries.write(slot * QUERIES + query); }
+    private static final class DeviceQueries implements Queries {
+        private final GpuQueryPool pool = RenderSystem.getDevice().createTimestampQueryPool(RING * QUERIES);
+        public void write(int query) { RenderSystem.getDevice().createCommandEncoder().writeTimestamp(pool, query); }
+        public OptionalLong[] read(int first, int count) { return pool.getValues(first, count); }
     }
 }
