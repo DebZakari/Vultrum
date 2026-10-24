@@ -158,17 +158,6 @@ class PunchyHandLookupTest {
         assertArrayEquals(before, bytes(node));
     }
 
-    @Test void onlyTheCheckedModCombinationIsSupported() {
-        for (String version : new String[]{"2.8f-hotfix", "2.8g"}) {
-            assertTrue(PunchyHandLookup.supports(version, true, false));
-            assertFalse(PunchyHandLookup.supports(version, false, false));
-            assertFalse(PunchyHandLookup.supports(version, true, true));
-        }
-        assertFalse(PunchyHandLookup.supports(null, true, false));
-        assertFalse(PunchyHandLookup.supports("2.8h", true, false));
-        assertFalse(PunchyHandLookup.supports("2.8g-hotfix", true, false));
-    }
-
     @Test void unexpectedCallInTheFailureRegionIsLeftUnchanged() throws Exception {
         ClassNode node = fixture(false);
         MethodNode method = node.methods.stream().filter(m -> m.name.equals(RESOLVE)).findFirst().orElseThrow();

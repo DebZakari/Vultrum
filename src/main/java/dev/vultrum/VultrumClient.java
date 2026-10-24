@@ -17,7 +17,7 @@ public final class VultrumClient implements ClientModInitializer {
     public void onInitializeClient() {
         LOGGER.info("Vultrum loaded");
         var config = VultrumConfig.get();
-        ShadowPass.configure(config.shadowFaceCull(), config.sunlessShadow(), VultrumMixinPlugin.supports("dev.vitrail."));
+        ShadowPass.configure(config.shadowFaceCull(), config.sunlessShadow(), LaunchHooks.get().vitrail());
         GpuOcclusionCull.logState();
         LOGGER.info("Arena cap {}", ArenaCap.on() ? "on, " + (ArenaCap.CAP_BYTES >> 20) + " MiB" : "off");
         LOGGER.info("Unload budget {}", ColumnLifecycle.unloadBudgetOn() ? "on" : "off");

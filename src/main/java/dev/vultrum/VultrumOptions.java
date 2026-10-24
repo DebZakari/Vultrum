@@ -22,8 +22,8 @@ public final class VultrumOptions implements ConfigEntryPoint {
     @Override
     public void registerConfigLate(ConfigBuilder builder) {
         // Sodium crashes the game if registration throws, so an API it may have changed is left alone.
-        if (!VultrumMixinPlugin.supports("net.caffeinemc.mods.sodium.")) return;
-        boolean hooked = VultrumMixinPlugin.supports("dev.vitrail.");
+        if (!LaunchHooks.get().sodium()) return;
+        boolean hooked = LaunchHooks.get().vitrail();
         StorageEventHandler storage = () -> {
             if (pending != null) VultrumConfig.saveNext(pending);
             pending = null;
@@ -36,7 +36,7 @@ public final class VultrumOptions implements ConfigEntryPoint {
                 .addOption(option(builder, VultrumConfig.SUNLESS_SHADOW, hooked, storage, VultrumConfig::sunlessShadow, VultrumConfig::withSunlessShadow));
         var compatibility = builder.createOptionGroup()
                 .setName(Component.translatable("vultrum.options.group.compatibility"))
-                .addOption(option(builder, VultrumConfig.PUNCHY_HAND_CACHE, VultrumMixinPlugin.supportsPunchyHandLookup(), storage,
+                .addOption(option(builder, VultrumConfig.PUNCHY_HAND_CACHE, LaunchHooks.get().punchyHandLookupAvailable(), storage,
                         VultrumConfig::punchyHandCache, VultrumConfig::withPunchyHandCache));
         // Need neither Vitrail nor a shader pack: they hold back the client's packets, size Sodium's buffers, spread its
         // chunk removals and reload registration, and move its buffer reclaim off the render thread.

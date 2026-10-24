@@ -11,7 +11,7 @@ import com.mojang.renderpearl.backend.vulkan.VulkanGpuBuffer;
 import com.mojang.renderpearl.backend.vulkan.VulkanGpuTextureView;
 import dev.vultrum.VultrumClient;
 import dev.vultrum.VultrumConfig;
-import dev.vultrum.VultrumMixinPlugin;
+import dev.vultrum.LaunchHooks;
 import dev.vultrum.mixin.FrontendGpuDeviceAccessor;
 import dev.vultrum.mixin.VKIndirectDrawBatchAccessor;
 import dev.vultrum.mixin.VulkanCommandEncoderAccessor;
@@ -87,7 +87,7 @@ import static org.lwjgl.vulkan.VK13.*;
  */
 public final class GpuOcclusionCull {
     /** Read once at launch. Also forces Sodium's indirect backend, whose draw arguments the GPU can edit. */
-    public static final boolean CULL = VultrumConfig.get().occlusionCull() && VultrumMixinPlugin.supports("dev.vitrail.")
+    public static final boolean CULL = VultrumConfig.get().occlusionCull() && LaunchHooks.get().vitrail()
             && vitrailWantsPack();
 
     private static final int COMMAND_BYTES = 20; // VkDrawIndexedIndirectCommand
@@ -368,7 +368,7 @@ public final class GpuOcclusionCull {
 
     private static String launchReason() {
         if (!VultrumConfig.get().occlusionCull()) return "disabled setting";
-        if (!VultrumMixinPlugin.supports("dev.vitrail.")) return "unsupported or absent Sodium/Vitrail version";
+        if (!LaunchHooks.get().vitrail()) return "unsupported or absent Sodium/Vitrail version";
         return "shader pack disabled or unreadable at launch; restart after enabling a pack";
     }
 

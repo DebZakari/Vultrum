@@ -2,7 +2,7 @@ package dev.vultrum.upload;
 
 import dev.vultrum.VultrumClient;
 import dev.vultrum.VultrumConfig;
-import dev.vultrum.VultrumMixinPlugin;
+import dev.vultrum.LaunchHooks;
 import net.caffeinemc.mods.sodium.client.util.NativeBuffer;
 
 import java.util.List;
@@ -97,7 +97,7 @@ public final class ReclaimThread {
 
     /** The client's setting and thread, loaded at their first use so that the thread above can be tested without a game. */
     private static final class Client {
-        static final boolean ON = VultrumConfig.get().reclaimThread() && VultrumMixinPlugin.supports("net.caffeinemc.mods.sodium.");
+        static final boolean ON = VultrumConfig.get().reclaimThread() && LaunchHooks.get().sodium();
         static final ReclaimThread THREAD = new ReclaimThread(() -> NativeBuffer.reclaim(false), INTERVAL_NANOS);
     }
 

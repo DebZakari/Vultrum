@@ -12,10 +12,6 @@ public final class PunchyHandLookup {
     private static final String MISSING = "vultrum$irisHandRendererMissing";
     private PunchyHandLookup() {}
 
-    public static boolean supports(String version, boolean vitrail, boolean iris) {
-        return ("2.8f-hotfix".equals(version) || "2.8g".equals(version)) && vitrail && !iris;
-    }
-
     public static boolean apply(ClassNode target) {
         if (target.fields.stream().anyMatch(field -> field.name.equals(MISSING))) return false;
         List<MethodNode> matches = target.methods.stream().filter(method -> method.name.equals(RESOLVER)

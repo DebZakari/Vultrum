@@ -1,7 +1,7 @@
 package dev.vultrum.upload;
 
 import dev.vultrum.VultrumConfig;
-import dev.vultrum.VultrumMixinPlugin;
+import dev.vultrum.LaunchHooks;
 
 /**
  * Caps the size of each new arena, the buffers Sodium stores terrain geometry and indices in. A new buffer of tens
@@ -37,6 +37,6 @@ public final class ArenaCap {
 
     /** The setting, loaded at its first use so that the rule above can be tested without a game. */
     private static final class Client {
-        static final boolean ON = VultrumConfig.get().arenaCap() && VultrumMixinPlugin.supports("net.caffeinemc.mods.sodium.");
+        static final boolean ON = VultrumConfig.get().arenaCap() && LaunchHooks.get().sodium();
     }
 }

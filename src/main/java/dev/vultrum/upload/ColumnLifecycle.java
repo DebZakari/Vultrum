@@ -1,7 +1,7 @@
 package dev.vultrum.upload;
 
 import dev.vultrum.VultrumConfig;
-import dev.vultrum.VultrumMixinPlugin;
+import dev.vultrum.LaunchHooks;
 import dev.vultrum.bench.FrameTimer;
 import it.unimi.dsi.fastutil.longs.LongCollection;
 import it.unimi.dsi.fastutil.longs.LongSet;
@@ -78,7 +78,7 @@ public final class ColumnLifecycle {
     /** Launch configuration and numeric diagnostics only; no renderer, level or callback is held globally. */
     private static final class Client {
         static final boolean UNLOADS = VultrumConfig.get().unloadBudget()
-                && VultrumMixinPlugin.supports("net.caffeinemc.mods.sodium.");
+                && LaunchHooks.get().sodium();
         static int pending;
 
         static void columns(int added, int removed, int waiting) {

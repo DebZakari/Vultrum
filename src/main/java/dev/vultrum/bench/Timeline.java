@@ -1,5 +1,7 @@
 package dev.vultrum.bench;
 
+import dev.vultrum.LaunchHooks;
+
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -22,11 +24,9 @@ import java.util.stream.Collectors;
  * loads at their speed.
  */
 public final class Timeline {
-    // Read by VultrumMixinPlugin too, which applies the timeline's hooks: this class loads no game classes.
-    private static final String MODE = mode(System.getProperty("vultrum.bench"), System.getProperty("vultrum.bench.timeline"));
-    public static final boolean ON = on(MODE);
+    public static final boolean ON = LaunchHooks.get().timeline() != LaunchHooks.TimelineMode.OFF;
     /** Dirty marks and light too: the timeline's full mode. */
-    public static final boolean FULL = full(MODE);
+    public static final boolean FULL = LaunchHooks.get().timeline() == LaunchHooks.TimelineMode.FULL;
     private static final long ORIGIN = System.nanoTime();
     private static final StackWalker WALKER = StackWalker.getInstance();
     private static final Map<String, Integer> callers = new LinkedHashMap<>();
@@ -37,15 +37,6 @@ public final class Timeline {
     private static boolean deferred;
 
     private Timeline() {}
-
-    /** The timeline's mode from the benchmark's scenario property and its own, in lower case: empty outside a benchmark. */
-    static String mode(String bench, String timeline) {
-        return bench != null && timeline != null ? timeline.toLowerCase(Locale.ROOT) : "";
-    }
-
-    static boolean on(String mode) { return mode.equals("true") || mode.equals("chunks"); }
-
-    static boolean full(String mode) { return mode.equals("true"); }
 
     /** Starts timeline.csv in the run's output directory; a failure is reported by {@link #write}. */
     static void open(Path out) {
