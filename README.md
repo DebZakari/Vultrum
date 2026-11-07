@@ -112,9 +112,11 @@ Fabric Loader 0.19.5 or later.
 
 Vultrum's Sodium integration supports versions from 0.9.3-alpha.1 up to, but excluding, 0.9.4-alpha. Unsupported versions disable the features that depend on Sodium until compatibility is checked.
 
-Alpha.6 was checked with Sodium 0.9.3-beta.1 and Fabric API 0.163.0+26.3 on the RTX 3090 with Vitrail 0.13 and the existing 32-mod setup, including terrain reloads, shader switching, dimension changes, window changes and rejoining. Alpha.5 also supports these dependency versions.
+Alpha.6 was checked with Sodium 0.9.3-beta.1 and Fabric API 0.163.0+26.3 on the RTX 3090 with Vitrail 0.13 and the existing 32-mod setup, including terrain reloads, shader switching, dimension changes, window changes and rejoining. Alpha.5 also supports these dependency versions. Alpha.9 was also checked with Sodium 0.9.3-beta.3 on the same setup with Vultrum's build of Vitrail 0.13.0-beta.vultrum.5: the world loads, terrain completes, mobs and chests draw in place, and both settings pages open.
 
-<a id="vitrail"></a>For shader packs you can use Vitrail from Modrinth, or [Vultrum's build of Vitrail](https://github.com/DebZakari/vitrail-shaders/releases/tag/0.13.0-beta.vultrum.4). It's the build Vultrum is tested with: Vitrail 0.13.0-beta, plus faster drawing of mobs and chests, fixes for mipmapped shader targets and missing or flickering glow overlays from Entity Texture Features, and support for Wakes Reforged trails with shaders on Minecraft 26.3. It replaces Vitrail in your `mods` folder. If something goes wrong with it, report it on [Vultrum's issues](https://github.com/DebZakari/Vultrum/issues), not Vitrail's.
+<a id="vitrail"></a>For shader packs you can use Vitrail from Modrinth, or [Vultrum's build of Vitrail](https://github.com/DebZakari/vitrail-shaders/releases/tag/0.13.0-beta.vultrum.5). It's the build Vultrum is tested with: Vitrail 0.13.0-beta, plus faster drawing of mobs and chests, fixes for mipmapped shader targets and missing or flickering glow overlays from Entity Texture Features, support for Wakes Reforged trails with shaders on Minecraft 26.3, and terrain drawn in the right place with Sodium 0.9.3-beta.2 or newer. It replaces Vitrail in your `mods` folder. If something goes wrong with it, report it on [Vultrum's issues](https://github.com/DebZakari/Vultrum/issues), not Vitrail's.
+
+With Sodium 0.9.3-beta.2 or newer, shader packs need Vultrum's build 0.13.0-beta.vultrum.5. Vitrail 0.13.0-beta from Modrinth and Vultrum's earlier builds draw terrain and its shadows out of place with those Sodium versions, by up to a block, and the terrain slides as you move. With Sodium 0.9.3-beta.1 or older, any of them works.
 
 What changed in each version is in the [changelog](CHANGELOG.md).
 
