@@ -36,7 +36,7 @@ Minecraft 26.3 can draw with Vulkan instead of OpenGL. Vultrum adds two things o
 
 **With or without shaders**, it smooths out chunk loading. Sodium does some of its loading work in bursts: a pile of new chunks from the server, the chunks that leave your view, the cleanup after Java's garbage collector runs. Vultrum spreads that work over several frames, so flying into new terrain stutters less. Alpha.3 also spreads already-loaded terrain registration across frames after F3+A or a render distance change, reducing reload freezes.
 
-Most features are on by default and can be turned off in Sodium's video settings. Skip Sunless Terrain and Faster Punchy Hands are off by default.
+Most features are on by default and can be turned off in Sodium's video settings. Skip Sunless Terrain, Faster Punchy Hands and EMF Shadow Frame Skip are off by default.
 
 Inspired by [Nvidium](https://github.com/MCRcortex/nvidium) and [Vercidium's voxel optimisation work](https://vercidium.com/blog/voxel-world-optimisations/).
 
@@ -137,6 +137,8 @@ Vultrum adds two pages to Sodium's video settings, **Culling** and **Loading**. 
 GPU Occlusion Culling falls back to ordinary terrain drawing when the device is unsupported or its cull fails. A runtime failure disables it for the rest of the session. The log reports whether the setting was requested, whether it is active, and why it is off. A shader pack must be enabled and its saved launch state readable when the game starts; enabling it later needs a restart.
 
 The **Compatibility** group on the Culling page also offers **Faster Punchy Hands**, off by default. It reduces Punchy's first-person shader-check overhead without skipping hand animations. It needs Punchy 2.8f-hotfix or 2.8g and a supported Vitrail version, with Iris absent. Other versions leave the hook disabled. Changing it takes effect after a restart.
+
+**EMF Shadow Frame Skip**, in the same group and off by default, lets Entity Model Features reuse a mob's last pose in Vitrail's shadow map instead of animating it a second time each frame, as EMF already does under Iris. In a test with 260 animated mobs in view it gave about 6% more FPS, and a view without mobs didn't change. A mob out of view whose shadow falls into view can hold its last pose. It needs Entity Model Features 3.3.12 or a later 3.3 version and a supported Vitrail version, with Iris absent, and follows EMF's own setting for skipping shadow frames. Changing it takes effect after a restart.
 
 Resource-pack reloads now refresh player-head icons. Alpha.8 fixes the crash reproduced when subsequently switching shaders off and back on in the tested full mod setup.
 
