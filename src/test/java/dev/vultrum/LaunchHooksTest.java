@@ -30,10 +30,12 @@ class LaunchHooksTest {
             "SodiumSetupPhasesMixin", "SodiumNativeBufferMixin", "SodiumBuildSubmitMixin");
     private static final Set<String> CHUNKS = Set.of("ClientChunkTimelineMixin", "ClientChunkStorageTimelineMixin");
     private static final Set<String> FULL = Set.of("ClientLightTimelineMixin", "ClientChunkLightTimelineMixin", "SodiumDirtyTimelineMixin");
+    private static final Map<String, String> EMF_HOOKS = Map.of("EmfShadowSkipMixin", "traben.entity_model_features.utils.EMFLODHandler",
+            "VitrailShadowGeometryMixin", "dev.vitrail.render.ShadowGeometry");
 
     private static LaunchHooks selection(String sodium, String vitrail, String punchy, boolean iris,
                                          String bench, String timeline, BooleanSupplier requested) throws Exception {
-        return new LaunchHooks(mods(sodium, vitrail, punchy, iris), bench, timeline, requested);
+        return new LaunchHooks(mods(sodium, vitrail, punchy, iris), bench, timeline, requested, LaunchHooksTest::noConfig);
     }
 
     private static Map<String, Version> mods(String sodium, String vitrail, String punchy, boolean iris) throws Exception {
@@ -129,7 +131,7 @@ class LaunchHooksTest {
                         assertEquals(expectedTimeline, hooks.timeline());
                         for (var entry : shipped.entrySet()) for (String target : entry.getValue()) {
                             String name = entry.getKey();
-                            boolean allowed = !name.equals("PunchyHandLookupMixin");
+                            boolean allowed = !Set.of("PunchyHandLookupMixin", "VitrailShadowGeometryMixin", "EmfShadowSkipMixin").contains(name);
                             if (BENCH.contains(name)) allowed &= benchmark;
                             if (CHUNKS.contains(name)) allowed &= benchmark && expectedTimeline != LaunchHooks.TimelineMode.OFF;
                             if (FULL.contains(name)) allowed &= benchmark && expectedTimeline == LaunchHooks.TimelineMode.FULL;
@@ -160,6 +162,54 @@ class LaunchHooksTest {
     }
 
     @Test
+    void emfShadowSkipNeedsEveryPartSelectsBothHooksTogetherAndReadsItsOptInLazily() throws Exception {
+        for (String sodium : new String[]{null, "0.9.2", "0.9.3"})
+            for (String vitrail : new String[]{null, "0.13.0", "0.14.0-alpha.1"})
+                for (String emf : new String[]{null, "3.3.11", "3.3.12", "3.3.99", "3.4.0-alpha.1", "3.4.0"})
+                    for (boolean iris : new boolean[]{false, true}) for (boolean optIn : new boolean[]{false, true}) {
+                        var inventory = mods(sodium, vitrail, null, iris);
+                        if (emf != null) inventory.put("entity_model_features", Version.parse(emf));
+                        var reads = new AtomicInteger();
+                        var hooks = new LaunchHooks(inventory, null, null, LaunchHooksTest::noConfig, () -> { reads.incrementAndGet(); return optIn; });
+                        boolean available = "0.9.3".equals(sodium) && "0.13.0".equals(vitrail)
+                                && ("3.3.12".equals(emf) || "3.3.99".equals(emf)) && !iris;
+                        assertEquals(available, hooks.emfShadowSkipAvailable());
+                        assertEquals(0, reads.get(), "settings availability must not read the opt-in");
+                        var plugin = new VultrumMixinPlugin(hooks);
+                        for (var hook : EMF_HOOKS.entrySet())
+                            assertEquals(available && optIn, plugin.shouldApplyMixin(hook.getValue(), PREFIX + hook.getKey()));
+                        assertEquals(available ? EMF_HOOKS.size() : 0, reads.get());
+                    }
+    }
+
+    @Test
+    void emfShadowHooksTargetWhatTheManifestShipsAndCannotFailALaunch() throws Exception {
+        var shipped = shippedHooks();
+        for (var hook : EMF_HOOKS.entrySet()) {
+            assertEquals(List.of(hook.getValue()), shipped.get(hook.getKey()));
+            try (var bytes = Objects.requireNonNull(LaunchHooksTest.class.getResourceAsStream("/dev/vultrum/mixin/" + hook.getKey() + ".class"))) {
+                var node = new ClassNode();
+                new ClassReader(bytes).accept(node, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+                int injectors = 0;
+                for (var method : node.methods) {
+                    var annotations = new ArrayList<AnnotationNode>();
+                    if (method.visibleAnnotations != null) annotations.addAll(method.visibleAnnotations);
+                    if (method.invisibleAnnotations != null) annotations.addAll(method.invisibleAnnotations);
+                    for (var annotation : annotations) {
+                        if (!annotation.desc.startsWith("Lcom/llamalad7/mixinextras/injector/")
+                                && !annotation.desc.startsWith("Lorg/spongepowered/asm/mixin/injection/")) continue;
+                        injectors++;
+                        int at = annotation.values.indexOf("require");
+                        assertTrue(at >= 0, () -> hook.getKey() + " would take the mixin config's require=1");
+                        assertEquals(0, annotation.values.get(at + 1), hook.getKey());
+                    }
+                }
+                assertTrue(injectors > 0, hook.getKey());
+            }
+        }
+    }
+
+    @Test
     void warningDecisionsPreserveAbsentAndUnsupportedDistinction() throws Exception {
         var missing = selection(null, null, null, false, null, null, LaunchHooksTest::noConfig);
         assertEquals(List.of(), missing.warnings());
@@ -175,7 +225,7 @@ class LaunchHooksTest {
     @Test
     void callerCannotMutateTheObservedInventory() throws Exception {
         var inventory = mods("0.9.3", "0.13.0", null, false);
-        var hooks = new LaunchHooks(inventory, null, null, LaunchHooksTest::noConfig);
+        var hooks = new LaunchHooks(inventory, null, null, LaunchHooksTest::noConfig, LaunchHooksTest::noConfig);
         inventory.clear();
         assertTrue(hooks.vitrail());
         assertTrue(new VultrumMixinPlugin(hooks).shouldApplyMixin(VITRAIL_TARGET, PREFIX + "VitrailTerrainDrawMixin"));
@@ -205,9 +255,11 @@ class LaunchHooksTest {
             }
         }) {
             var type = loader.loadClass("dev.vultrum.LaunchHooks");
-            var constructor = type.getDeclaredConstructor(Map.class, String.class, String.class, BooleanSupplier.class);
+            var constructor = type.getDeclaredConstructor(Map.class, String.class, String.class, BooleanSupplier.class, BooleanSupplier.class);
             constructor.setAccessible(true);
-            Object hooks = constructor.newInstance(mods("0.9.3", "0.13.0", "2.8g", false), "fixture", "TRUE", (BooleanSupplier) () -> true);
+            var inventory = mods("0.9.3", "0.13.0", "2.8g", false);
+            inventory.put("entity_model_features", Version.parse("3.3.12"));
+            Object hooks = constructor.newInstance(inventory, "fixture", "TRUE", (BooleanSupplier) () -> true, (BooleanSupplier) () -> true);
             var pluginType = loader.loadClass("dev.vultrum.VultrumMixinPlugin");
             var pluginConstructor = pluginType.getDeclaredConstructor(type);
             pluginConstructor.setAccessible(true);
@@ -215,6 +267,7 @@ class LaunchHooksTest {
             var applies = pluginType.getMethod("shouldApplyMixin", String.class, String.class);
             assertEquals(true, applies.invoke(plugin, VITRAIL_TARGET, PREFIX + "VitrailTerrainDrawMixin"));
             assertEquals(true, applies.invoke(plugin, VANILLA_TARGET, LaunchHooks.PUNCHY_HAND_LOOKUP));
+            for (var hook : EMF_HOOKS.entrySet()) assertEquals(true, applies.invoke(plugin, hook.getValue(), PREFIX + hook.getKey()));
             assertEquals(true, applies.invoke(plugin, VANILLA_TARGET, PREFIX + "ClientLightTimelineMixin"));
             pluginType.getMethod("onLoad", String.class).invoke(plugin, PREFIX);
             assertEquals(List.of(), denied);

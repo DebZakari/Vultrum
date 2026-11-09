@@ -21,6 +21,7 @@ import java.util.function.BooleanSupplier;
  */
 public final class LaunchHooks {
     static final String PUNCHY_HAND_LOOKUP = "dev.vultrum.mixin.PunchyHandLookupMixin";
+    private static final Set<String> EMF_SHADOW_SKIP = Set.of("dev.vultrum.mixin.VitrailShadowGeometryMixin", "dev.vultrum.mixin.EmfShadowSkipMixin");
     private record Range(String modId, String range) {
         boolean includes(Version version) {
             try {
@@ -32,6 +33,7 @@ public final class LaunchHooks {
     }
     private static final Range SODIUM = new Range("sodium", ">=0.9.3-alpha.1 <0.9.4-alpha");
     private static final Range VITRAIL = new Range("vitrail", ">=0.12.0-alpha <0.14.0-alpha");
+    private static final Range EMF = new Range("entity_model_features", ">=3.3.12 <3.4.0-alpha");
     private static final Set<String> PUNCHY_VERSIONS = Set.of("2.8f-hotfix", "2.8g");
     private static final Set<String> BENCH_ONLY = Set.of("dev.vultrum.mixin.ClientLevelMixin", "dev.vultrum.mixin.MinecraftMixin",
             "dev.vultrum.mixin.RenderSectionManagerMixin", "dev.vultrum.mixin.SodiumSetupPhasesMixin",
@@ -47,9 +49,9 @@ public final class LaunchHooks {
     private final Map<String, Version> mods;
     private final boolean benchmark;
     private final TimelineMode timeline;
-    private final BooleanSupplier punchyRequested;
+    private final BooleanSupplier punchyRequested, emfShadowSkipRequested;
 
-    LaunchHooks(Map<String, Version> mods, String scenario, String timeline, BooleanSupplier punchyRequested) {
+    LaunchHooks(Map<String, Version> mods, String scenario, String timeline, BooleanSupplier punchyRequested, BooleanSupplier emfShadowSkipRequested) {
         this.mods = Map.copyOf(mods);
         this.benchmark = scenario != null && !scenario.isBlank();
         // Match the timeline logger's existing property semantics, including a present but blank scenario.
@@ -60,6 +62,7 @@ public final class LaunchHooks {
             default -> TimelineMode.OFF;
         };
         this.punchyRequested = Objects.requireNonNull(punchyRequested);
+        this.emfShadowSkipRequested = Objects.requireNonNull(emfShadowSkipRequested);
     }
 
     /** One immutable observation of launch metadata; next-launch settings never change this selection. */
@@ -77,7 +80,14 @@ public final class LaunchHooks {
 
     public TimelineMode timeline() { return timeline; }
 
+    /** Availability, independently of the opt-in. Under Iris, EMF's own check already sees the shadow pass. */
+    public boolean emfShadowSkipAvailable() {
+        return vitrail() && EMF.includes(mods.get(EMF.modId())) && !mods.containsKey("iris");
+    }
+
     boolean applies(String target, String mixin) {
+        if (EMF_SHADOW_SKIP.contains(mixin))
+            return emfShadowSkipAvailable() && emfShadowSkipRequested.getAsBoolean();
         if (PUNCHY_HAND_LOOKUP.equals(mixin))
             return punchyHandLookupAvailable() && punchyRequested.getAsBoolean();
         if ((BENCH_ONLY.contains(mixin) || TIMELINE_ONLY.contains(mixin)) && !benchmark) return false;
@@ -105,10 +115,10 @@ public final class LaunchHooks {
         private static LaunchHooks observe() {
             var loader = FabricLoader.getInstance();
             var mods = new HashMap<String, Version>();
-            for (var id : List.of("sodium", "vitrail", "punchy", "iris"))
+            for (var id : List.of("sodium", "vitrail", "punchy", "iris", "entity_model_features"))
                 loader.getModContainer(id).ifPresent(mod -> mods.put(id, mod.getMetadata().getVersion()));
             return new LaunchHooks(mods, System.getProperty("vultrum.bench"), System.getProperty("vultrum.bench.timeline"),
-                    () -> VultrumConfig.get().punchyHandCache());
+                    () -> VultrumConfig.get().punchyHandCache(), () -> VultrumConfig.get().emfShadowSkip());
         }
     }
 }

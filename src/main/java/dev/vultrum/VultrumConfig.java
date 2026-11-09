@@ -18,20 +18,20 @@ import java.util.Properties;
  */
 public record VultrumConfig(boolean shadowFaceCull, boolean occlusionCull, boolean sunlessShadow, boolean packetBudget,
                             boolean arenaCap, boolean unloadBudget, boolean reclaimThread, boolean reloadRegistration,
-                            boolean punchyHandCache) {
+                            boolean punchyHandCache, boolean emfShadowSkip) {
     private static final Logger LOGGER = LoggerFactory.getLogger("Vultrum");
-    public static final VultrumConfig DEFAULTS = new VultrumConfig(true, true, false, true, true, true, true, true, false);
+    public static final VultrumConfig DEFAULTS = new VultrumConfig(true, true, false, true, true, true, true, true, false, false);
     static final String SHADOW_FACE_CULL = "shadow-face-cull", OCCLUSION_CULL = "occlusion-cull", SUNLESS_SHADOW = "sunless-shadow",
             PACKET_BUDGET = "packet-budget", ARENA_CAP = "arena-cap", UNLOAD_BUDGET = "unload-budget", RECLAIM_THREAD = "reclaim-thread",
-            RELOAD_REGISTRATION = "reload-registration", PUNCHY_HAND_CACHE = "punchy-hand-cache";
+            RELOAD_REGISTRATION = "reload-registration", PUNCHY_HAND_CACHE = "punchy-hand-cache", EMF_SHADOW_SKIP = "emf-shadow-skip";
     static final List<String> KEYS = List.of(SHADOW_FACE_CULL, OCCLUSION_CULL, SUNLESS_SHADOW, PACKET_BUDGET, ARENA_CAP, UNLOAD_BUDGET,
-            RECLAIM_THREAD, RELOAD_REGISTRATION, PUNCHY_HAND_CACHE);
+            RECLAIM_THREAD, RELOAD_REGISTRATION, PUNCHY_HAND_CACHE, EMF_SHADOW_SKIP);
     private static VultrumConfig current, next;
 
-    /** Existing callers leave the optional compatibility cache off. */
+    /** Existing callers leave the optional compatibility hooks off. */
     public VultrumConfig(boolean shadowFaceCull, boolean occlusionCull, boolean sunlessShadow, boolean packetBudget,
                          boolean arenaCap, boolean unloadBudget, boolean reclaimThread, boolean reloadRegistration) {
-        this(shadowFaceCull, occlusionCull, sunlessShadow, packetBudget, arenaCap, unloadBudget, reclaimThread, reloadRegistration, false);
+        this(shadowFaceCull, occlusionCull, sunlessShadow, packetBudget, arenaCap, unloadBudget, reclaimThread, reloadRegistration, false, false);
     }
 
     /** The game's settings, read on first use. Mixins may need them before the client initializer runs. */
@@ -58,39 +58,43 @@ public record VultrumConfig(boolean shadowFaceCull, boolean occlusionCull, boole
     }
 
     public VultrumConfig withShadowFaceCull(boolean on) {
-        return new VultrumConfig(on, occlusionCull, sunlessShadow, packetBudget, arenaCap, unloadBudget, reclaimThread, reloadRegistration, punchyHandCache);
+        return new VultrumConfig(on, occlusionCull, sunlessShadow, packetBudget, arenaCap, unloadBudget, reclaimThread, reloadRegistration, punchyHandCache, emfShadowSkip);
     }
 
     public VultrumConfig withOcclusionCull(boolean on) {
-        return new VultrumConfig(shadowFaceCull, on, sunlessShadow, packetBudget, arenaCap, unloadBudget, reclaimThread, reloadRegistration, punchyHandCache);
+        return new VultrumConfig(shadowFaceCull, on, sunlessShadow, packetBudget, arenaCap, unloadBudget, reclaimThread, reloadRegistration, punchyHandCache, emfShadowSkip);
     }
 
     public VultrumConfig withSunlessShadow(boolean on) {
-        return new VultrumConfig(shadowFaceCull, occlusionCull, on, packetBudget, arenaCap, unloadBudget, reclaimThread, reloadRegistration, punchyHandCache);
+        return new VultrumConfig(shadowFaceCull, occlusionCull, on, packetBudget, arenaCap, unloadBudget, reclaimThread, reloadRegistration, punchyHandCache, emfShadowSkip);
     }
 
     public VultrumConfig withPacketBudget(boolean on) {
-        return new VultrumConfig(shadowFaceCull, occlusionCull, sunlessShadow, on, arenaCap, unloadBudget, reclaimThread, reloadRegistration, punchyHandCache);
+        return new VultrumConfig(shadowFaceCull, occlusionCull, sunlessShadow, on, arenaCap, unloadBudget, reclaimThread, reloadRegistration, punchyHandCache, emfShadowSkip);
     }
 
     public VultrumConfig withArenaCap(boolean on) {
-        return new VultrumConfig(shadowFaceCull, occlusionCull, sunlessShadow, packetBudget, on, unloadBudget, reclaimThread, reloadRegistration, punchyHandCache);
+        return new VultrumConfig(shadowFaceCull, occlusionCull, sunlessShadow, packetBudget, on, unloadBudget, reclaimThread, reloadRegistration, punchyHandCache, emfShadowSkip);
     }
 
     public VultrumConfig withUnloadBudget(boolean on) {
-        return new VultrumConfig(shadowFaceCull, occlusionCull, sunlessShadow, packetBudget, arenaCap, on, reclaimThread, reloadRegistration, punchyHandCache);
+        return new VultrumConfig(shadowFaceCull, occlusionCull, sunlessShadow, packetBudget, arenaCap, on, reclaimThread, reloadRegistration, punchyHandCache, emfShadowSkip);
     }
 
     public VultrumConfig withReclaimThread(boolean on) {
-        return new VultrumConfig(shadowFaceCull, occlusionCull, sunlessShadow, packetBudget, arenaCap, unloadBudget, on, reloadRegistration, punchyHandCache);
+        return new VultrumConfig(shadowFaceCull, occlusionCull, sunlessShadow, packetBudget, arenaCap, unloadBudget, on, reloadRegistration, punchyHandCache, emfShadowSkip);
     }
 
     public VultrumConfig withReloadRegistration(boolean on) {
-        return new VultrumConfig(shadowFaceCull, occlusionCull, sunlessShadow, packetBudget, arenaCap, unloadBudget, reclaimThread, on, punchyHandCache);
+        return new VultrumConfig(shadowFaceCull, occlusionCull, sunlessShadow, packetBudget, arenaCap, unloadBudget, reclaimThread, on, punchyHandCache, emfShadowSkip);
     }
 
     public VultrumConfig withPunchyHandCache(boolean on) {
-        return new VultrumConfig(shadowFaceCull, occlusionCull, sunlessShadow, packetBudget, arenaCap, unloadBudget, reclaimThread, reloadRegistration, on);
+        return new VultrumConfig(shadowFaceCull, occlusionCull, sunlessShadow, packetBudget, arenaCap, unloadBudget, reclaimThread, reloadRegistration, on, emfShadowSkip);
+    }
+
+    public VultrumConfig withEmfShadowSkip(boolean on) {
+        return new VultrumConfig(shadowFaceCull, occlusionCull, sunlessShadow, packetBudget, arenaCap, unloadBudget, reclaimThread, reloadRegistration, punchyHandCache, on);
     }
 
     public static VultrumConfig load(Path file) {
@@ -109,7 +113,8 @@ public record VultrumConfig(boolean shadowFaceCull, boolean occlusionCull, boole
                 flag(properties, OCCLUSION_CULL, DEFAULTS.occlusionCull), flag(properties, SUNLESS_SHADOW, DEFAULTS.sunlessShadow),
                 flag(properties, PACKET_BUDGET, DEFAULTS.packetBudget), flag(properties, ARENA_CAP, DEFAULTS.arenaCap),
                 flag(properties, UNLOAD_BUDGET, DEFAULTS.unloadBudget), flag(properties, RECLAIM_THREAD, DEFAULTS.reclaimThread),
-                flag(properties, RELOAD_REGISTRATION, DEFAULTS.reloadRegistration), flag(properties, PUNCHY_HAND_CACHE, DEFAULTS.punchyHandCache));
+                flag(properties, RELOAD_REGISTRATION, DEFAULTS.reloadRegistration), flag(properties, PUNCHY_HAND_CACHE, DEFAULTS.punchyHandCache),
+                flag(properties, EMF_SHADOW_SKIP, DEFAULTS.emfShadowSkip));
         if (!KEYS.stream().allMatch(properties::containsKey)) write(file, config);
         return config;
     }
@@ -169,10 +174,16 @@ public record VultrumConfig(boolean shadowFaceCull, boolean occlusionCull, boole
                     # Reduce Punchy's first-person animation overhead when Iris is absent. Requires Punchy
                     # 2.8f-hotfix or 2.8g with Vitrail. Hand animations are preserved.
                     %s=%b
+
+                    # Let Entity Model Features reuse a mob's last pose in Vitrail's shadow map, as it already does
+                    # under Iris, instead of animating it a second time each frame. Requires EMF 3.3.12 or a later
+                    # 3.3 version with Vitrail, and no Iris. Follows EMF's own setting for skipping shadow frames.
+                    %s=%b
                     """.formatted(SHADOW_FACE_CULL, config.shadowFaceCull, OCCLUSION_CULL, config.occlusionCull,
                     SUNLESS_SHADOW, config.sunlessShadow, PACKET_BUDGET, config.packetBudget, ARENA_CAP, config.arenaCap,
                     UNLOAD_BUDGET, config.unloadBudget, RECLAIM_THREAD, config.reclaimThread,
-                    RELOAD_REGISTRATION, config.reloadRegistration, PUNCHY_HAND_CACHE, config.punchyHandCache));
+                    RELOAD_REGISTRATION, config.reloadRegistration, PUNCHY_HAND_CACHE, config.punchyHandCache,
+                    EMF_SHADOW_SKIP, config.emfShadowSkip));
         } catch (IOException e) {
             LOGGER.warn("Can't write {}", file, e);
         }

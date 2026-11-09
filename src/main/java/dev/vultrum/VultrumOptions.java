@@ -37,7 +37,9 @@ public final class VultrumOptions implements ConfigEntryPoint {
         var compatibility = builder.createOptionGroup()
                 .setName(Component.translatable("vultrum.options.group.compatibility"))
                 .addOption(option(builder, VultrumConfig.PUNCHY_HAND_CACHE, LaunchHooks.get().punchyHandLookupAvailable(), storage,
-                        VultrumConfig::punchyHandCache, VultrumConfig::withPunchyHandCache));
+                        VultrumConfig::punchyHandCache, VultrumConfig::withPunchyHandCache))
+                .addOption(option(builder, VultrumConfig.EMF_SHADOW_SKIP, LaunchHooks.get().emfShadowSkipAvailable(), storage,
+                        VultrumConfig::emfShadowSkip, VultrumConfig::withEmfShadowSkip));
         // Need neither Vitrail nor a shader pack: they hold back the client's packets, size Sodium's buffers, spread its
         // chunk removals and reload registration, and move its buffer reclaim off the render thread.
         var loading = builder.createOptionGroup()
