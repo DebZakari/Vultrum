@@ -5,6 +5,8 @@
   "vultrum.options.group.compatibility": "Compatibility",
   "vultrum.options.punchy_hand_cache": "Faster Punchy Hands",
   "vultrum.options.punchy_hand_cache.tooltip": "Reduces CPU overhead from Punchy's first-person shader checks when Iris is absent. Requires Punchy 2.8f-hotfix or 2.8g and a supported Vitrail version.\n\nHand animations are preserved. Off by default.",
+  "vultrum.options.display_shadow_reach": "Display Shadow Limit",
+  "vultrum.options.display_shadow_reach.tooltip": "Leaves item and block displays out of Vitrail's shadow map once they are too far away for the shader pack to keep their shadow. About 18% more FPS in a test with rows of displays past that distance, and shadows looked the same. Needs a Vitrail shader pack.\n\nOnly acts on packs that set a shorter shadow distance for entities than for the world.",
   "vultrum.options.emf_shadow_skip": "EMF Shadow Frame Skip",
   "vultrum.options.emf_shadow_skip.tooltip": "Lets Entity Model Features reuse a mob's last pose in Vitrail's shadow map, as it already does under Iris, instead of animating it a second time each frame. Requires EMF 3.3.12 or a later 3.3 version and a supported Vitrail version, with Iris absent.\n\nAbout 6% more FPS with 260 animated mobs in view, and no change without mobs. A mob out of view whose shadow falls into view can hold its last pose. Follows EMF's own setting for skipping shadow frames. Off by default.",
   "vultrum.options.occlusion_cull": "GPU Occlusion Culling",

@@ -31,6 +31,11 @@ public final class ShadowPass {
         suspended = suspend;
     }
 
+    /** Whether the bench's visual check has switched shadow culling off. */
+    public static boolean suspended() {
+        return suspended;
+    }
+
     /** How a shadow-pass cull's setting is logged. */
     static String status(boolean on, boolean hooked) {
         return !on ? "off" : hooked ? "on" : "off: needs Vitrail and Sodium in supported versions";

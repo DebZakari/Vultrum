@@ -18,6 +18,7 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -32,6 +33,9 @@ class LaunchHooksTest {
     private static final Set<String> FULL = Set.of("ClientLightTimelineMixin", "ClientChunkLightTimelineMixin", "SodiumDirtyTimelineMixin");
     private static final Map<String, String> EMF_HOOKS = Map.of("EmfShadowSkipMixin", "traben.entity_model_features.utils.EMFLODHandler",
             "VitrailShadowGeometryMixin", "dev.vitrail.render.ShadowGeometry");
+    private static final String DISPLAY_HOOK = "VitrailDisplayShadowReachMixin", SHADOW_GEOMETRY = "dev.vitrail.render.ShadowGeometry";
+    private static final List<Map.Entry<String, String>> OPTIONAL_HOOKS = Stream.concat(EMF_HOOKS.entrySet().stream(),
+            Stream.of(Map.entry(DISPLAY_HOOK, SHADOW_GEOMETRY))).toList();
 
     private static LaunchHooks selection(String sodium, String vitrail, String punchy, boolean iris,
                                          String bench, String timeline, BooleanSupplier requested) throws Exception {
@@ -183,9 +187,15 @@ class LaunchHooksTest {
     }
 
     @Test
-    void emfShadowHooksTargetWhatTheManifestShipsAndCannotFailALaunch() throws Exception {
+    void displayShadowHookFollowsVitrailAloneAndNotTheEmfOptIn() throws Exception {
+        assertTrue(new VultrumMixinPlugin(selection("0.9.3", "0.13.0", "2.8g", false, null, null, () -> false)).shouldApplyMixin(SHADOW_GEOMETRY, PREFIX + DISPLAY_HOOK));
+        assertFalse(new VultrumMixinPlugin(selection("0.9.3", "0.14.0", "2.8g", false, null, null, () -> true)).shouldApplyMixin(SHADOW_GEOMETRY, PREFIX + DISPLAY_HOOK));
+    }
+
+    @Test
+    void optionalHooksTargetWhatTheManifestShipsAndCannotFailALaunch() throws Exception {
         var shipped = shippedHooks();
-        for (var hook : EMF_HOOKS.entrySet()) {
+        for (var hook : OPTIONAL_HOOKS) {
             assertEquals(List.of(hook.getValue()), shipped.get(hook.getKey()));
             try (var bytes = Objects.requireNonNull(LaunchHooksTest.class.getResourceAsStream("/dev/vultrum/mixin/" + hook.getKey() + ".class"))) {
                 var node = new ClassNode();

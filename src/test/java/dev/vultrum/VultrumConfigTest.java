@@ -32,6 +32,7 @@ class VultrumConfigTest {
         assertTrue(Files.readString(file).contains("reload-registration=true"));
         assertTrue(Files.readString(file).contains("punchy-hand-cache=false"));
         assertTrue(Files.readString(file).contains("emf-shadow-skip=false"));
+        assertTrue(Files.readString(file).contains("display-shadow-reach=true"));
         assertEquals(VultrumConfig.DEFAULTS, VultrumConfig.load(file), "the written file reads back as the defaults");
     }
 
@@ -66,6 +67,8 @@ class VultrumConfigTest {
         assertFalse(loadWith("punchy-hand-cache=false\n").punchyHandCache());
         assertTrue(loadWith("emf-shadow-skip=true\n").emfShadowSkip());
         assertFalse(loadWith("emf-shadow-skip=false\n").emfShadowSkip());
+        assertFalse(loadWith("display-shadow-reach=false\n").displayShadowReach());
+        assertTrue(loadWith("display-shadow-reach=true\n").displayShadowReach());
     }
 
     @Test
@@ -85,6 +88,8 @@ class VultrumConfigTest {
         assertFalse(loadWith("punchy-hand-cache=invalid\n").punchyHandCache());
         assertFalse(loadWith("punchy-hand-cache=true\n").emfShadowSkip(), "off unless asked for");
         assertFalse(loadWith("emf-shadow-skip=invalid\n").emfShadowSkip());
+        assertTrue(loadWith("emf-shadow-skip=true\n").displayShadowReach(), "an older file gets the display limit");
+        assertTrue(loadWith("display-shadow-reach=invalid\n").displayShadowReach());
     }
 
     @Test
@@ -100,15 +105,16 @@ class VultrumConfigTest {
         assertTrue(Files.readString(file).contains("reload-registration=true"));
         assertTrue(Files.readString(file).contains("punchy-hand-cache=false"));
         assertTrue(Files.readString(file).contains("emf-shadow-skip=false"));
+        assertTrue(Files.readString(file).contains("display-shadow-reach=true"));
         assertEquals(config, VultrumConfig.load(file), "the rewrite keeps the values it read");
     }
 
     @Test
     void writtenSettingsReadBack() {
         Path file = dir.resolve("vultrum.properties");
-        for (int bits = 0; bits < 1024; bits++) {
+        for (int bits = 0; bits < 2048; bits++) {
             var config = new VultrumConfig((bits & 1) != 0, (bits & 2) != 0, (bits & 4) != 0, (bits & 8) != 0, (bits & 16) != 0, (bits & 32) != 0,
-                    (bits & 64) != 0, (bits & 128) != 0, (bits & 256) != 0, (bits & 512) != 0);
+                    (bits & 64) != 0, (bits & 128) != 0, (bits & 256) != 0, (bits & 512) != 0, (bits & 1024) != 0);
             VultrumConfig.write(file, config);
             assertEquals(config, VultrumConfig.load(file));
         }
@@ -125,8 +131,12 @@ class VultrumConfigTest {
         assertEquals(new VultrumConfig(true, false, true, false, true, true, true, false), config.withUnloadBudget(true));
         assertEquals(new VultrumConfig(true, false, true, false, true, false, false, false), config.withReclaimThread(false));
         assertEquals(new VultrumConfig(true, false, true, false, true, false, true, true), config.withReloadRegistration(true));
-        assertEquals(new VultrumConfig(true, false, true, false, true, false, true, false, true, false), config.withPunchyHandCache(true));
-        assertEquals(new VultrumConfig(true, false, true, false, true, false, true, false, false, true), config.withEmfShadowSkip(true));
+        assertEquals(new VultrumConfig(true, false, true, false, true, false, true, false, true, false, false), config.withPunchyHandCache(true));
+        assertEquals(new VultrumConfig(true, false, true, false, true, false, true, false, false, true, false), config.withEmfShadowSkip(true));
+        assertEquals(new VultrumConfig(true, false, true, false, true, false, true, false, false, false, true), config.withDisplayShadowReach(true));
+        assertTrue(config.withDisplayShadowReach(true).withEmfShadowSkip(true).displayShadowReach());
+        assertTrue(config.withDisplayShadowReach(true).withPunchyHandCache(true).displayShadowReach());
+        assertTrue(config.withEmfShadowSkip(true).withDisplayShadowReach(true).emfShadowSkip());
         assertTrue(config.withEmfShadowSkip(true).withPunchyHandCache(true).emfShadowSkip());
         assertTrue(config.withPunchyHandCache(true).withEmfShadowSkip(true).punchyHandCache());
         var skipping = config.withEmfShadowSkip(true);
@@ -152,7 +162,7 @@ class VultrumConfigTest {
     @Test
     void aCompleteFileIsLeftAlone() throws IOException {
         String content = "shadow-face-cull=false\nocclusion-cull=false\nsunless-shadow=true\npacket-budget=false\narena-cap=false\nunload-budget=false\n"
-                + "reclaim-thread=false\nreload-registration=false\npunchy-hand-cache=false\nemf-shadow-skip=false\n";
+                + "reclaim-thread=false\nreload-registration=false\npunchy-hand-cache=false\nemf-shadow-skip=false\ndisplay-shadow-reach=false\n";
         loadWith(content);
         assertEquals(content, Files.readString(dir.resolve("vultrum.properties")));
     }

@@ -133,6 +133,7 @@ Vultrum adds two pages to Sodium's video settings, **Culling** and **Loading**. 
 | GPU Occlusion Culling | on | Skips terrain hidden behind other terrain. It turns itself off in open scenes, where it would cost more than it saves. |
 | Light-Facing Shadow Faces | on | Draws only the sides of solid blocks that face the sun or moon into the shadow map. |
 | Skip Sunless Terrain | off | Leaves terrain that sunlight can't reach, such as caves, out of the shadow map. About 1% more FPS. |
+| Display Shadow Limit | on | Leaves item and block displays out of the shadow map once they are too far away for the shader pack to keep their shadow. About 18% more FPS in a test with rows of displays past that distance, and shadows looked the same. It only acts on packs that set a shorter shadow distance for entities than for the world. |
 
 GPU Occlusion Culling falls back to ordinary terrain drawing when the device is unsupported or its cull fails. A runtime failure disables it for the rest of the session. The log reports whether the setting was requested, whether it is active, and why it is off. A shader pack must be enabled and its saved launch state readable when the game starts; enabling it later needs a restart.
 

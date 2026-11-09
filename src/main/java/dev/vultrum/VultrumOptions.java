@@ -33,7 +33,8 @@ public final class VultrumOptions implements ConfigEntryPoint {
         var shadow = builder.createOptionGroup()
                 .setName(Component.translatable("vultrum.options.group.shadow"))
                 .addOption(option(builder, VultrumConfig.SHADOW_FACE_CULL, hooked, storage, VultrumConfig::shadowFaceCull, VultrumConfig::withShadowFaceCull))
-                .addOption(option(builder, VultrumConfig.SUNLESS_SHADOW, hooked, storage, VultrumConfig::sunlessShadow, VultrumConfig::withSunlessShadow));
+                .addOption(option(builder, VultrumConfig.SUNLESS_SHADOW, hooked, storage, VultrumConfig::sunlessShadow, VultrumConfig::withSunlessShadow))
+                .addOption(option(builder, VultrumConfig.DISPLAY_SHADOW_REACH, hooked, storage, VultrumConfig::displayShadowReach, VultrumConfig::withDisplayShadowReach));
         var compatibility = builder.createOptionGroup()
                 .setName(Component.translatable("vultrum.options.group.compatibility"))
                 .addOption(option(builder, VultrumConfig.PUNCHY_HAND_CACHE, LaunchHooks.get().punchyHandLookupAvailable(), storage,
