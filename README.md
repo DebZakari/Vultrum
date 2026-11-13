@@ -112,11 +112,21 @@ Fabric Loader 0.19.5 or later.
 
 Vultrum's Sodium integration supports versions from 0.9.3-alpha.1 up to, but excluding, 0.9.4-alpha. Unsupported versions disable the features that depend on Sodium until compatibility is checked.
 
-Alpha.6 was checked with Sodium 0.9.3-beta.1 and Fabric API 0.163.0+26.3 on the RTX 3090 with Vitrail 0.13 and the existing 32-mod setup, including terrain reloads, shader switching, dimension changes, window changes and rejoining. Alpha.5 also supports these dependency versions. Alpha.9 was also checked with Sodium 0.9.3-beta.3 on the same setup with Vultrum's build of Vitrail 0.13.0-beta.vultrum.5: the world loads, terrain completes, mobs and chests draw in place, and both settings pages open. Alpha.10 was checked with Sodium 0.9.3-beta.4 and Fabric API 0.165.2+26.3 in a full mod setup with Vultrum's build of Vitrail 0.13.0-beta.vultrum.6.
+<a id="vitrail"></a>For shader packs you can use Vitrail from Modrinth, or [Vultrum's build of Vitrail](https://github.com/DebZakari/vitrail-shaders/releases/tag/0.13.0-beta.vultrum.7). It's the build Vultrum is tested with: Vitrail 0.13.0-beta, plus faster drawing of mobs and chests, fixes for mipmapped shader targets and missing or flickering glow overlays from Entity Texture Features, support for Wakes Reforged trails with shaders on Minecraft 26.3, terrain drawn in the right place with Sodium 0.9.3-beta.2 or newer, and support for Sodium 0.9.3-beta.5. Since 0.13.0-beta.vultrum.6, on Minecraft 26.3 the shadows of mobs and displays in view reuse what was already drawn for the picture: in a field of mobs with Entity Model Features and Fresh Animations under Complementary it gave about 26% more FPS, and about 20% in a field of item and block displays. It replaces Vitrail in your `mods` folder. If something goes wrong with it, report it on [Vultrum's issues](https://github.com/DebZakari/Vultrum/issues), not Vitrail's.
 
-<a id="vitrail"></a>For shader packs you can use Vitrail from Modrinth, or [Vultrum's build of Vitrail](https://github.com/DebZakari/vitrail-shaders/releases/tag/0.13.0-beta.vultrum.6). It's the build Vultrum is tested with: Vitrail 0.13.0-beta, plus faster drawing of mobs and chests, fixes for mipmapped shader targets and missing or flickering glow overlays from Entity Texture Features, support for Wakes Reforged trails with shaders on Minecraft 26.3, and terrain drawn in the right place with Sodium 0.9.3-beta.2 or newer. Since 0.13.0-beta.vultrum.6, on Minecraft 26.3 the shadows of mobs and displays in view reuse what was already drawn for the picture: in a field of mobs with Entity Model Features and Fresh Animations under Complementary it gave about 26% more FPS, and about 20% in a field of item and block displays. It replaces Vitrail in your `mods` folder. If something goes wrong with it, report it on [Vultrum's issues](https://github.com/DebZakari/Vultrum/issues), not Vitrail's.
+Which Vitrail works depends on your Sodium version:
 
-With Sodium 0.9.3-beta.2 or newer, shader packs need Vultrum's build 0.13.0-beta.vultrum.5 or newer. Vitrail 0.13.0-beta from Modrinth and Vultrum's earlier builds draw terrain and its shadows out of place with those Sodium versions, by up to a block, and the terrain slides as you move. With Sodium 0.9.3-beta.1 or older, any of them works.
+| Sodium | Vitrail 0.13.0-beta from Modrinth | Vultrum's build of Vitrail |
+|---|---|---|
+| 0.9.3-alpha.1 to beta.1 | works | any build |
+| 0.9.3-beta.2 to beta.4 | starts, but terrain and its shadows are drawn up to a block out of place and slide as you move | 0.13.0-beta.vultrum.5 or newer |
+| 0.9.3-beta.5 | the game crashes when you join a world | 0.13.0-beta.vultrum.7 or newer |
+
+What each Vultrum release was checked with:
+
+- Alpha.6: Sodium 0.9.3-beta.1, Fabric API 0.163.0+26.3 and Vitrail 0.13, on the RTX 3090 with the existing 32-mod setup, including terrain reloads, shader switching, dimension changes, window changes and rejoining. Alpha.5 also supports these versions.
+- Alpha.9: Sodium 0.9.3-beta.3 and Vultrum's build of Vitrail 0.13.0-beta.vultrum.5, on the same setup. The world loads, terrain completes, mobs and chests draw in place, and both settings pages open.
+- Alpha.10: Sodium 0.9.3-beta.4, Fabric API 0.165.2+26.3 and Vultrum's build of Vitrail 0.13.0-beta.vultrum.6, in a full mod setup. Then Sodium 0.9.3-beta.5, Fabric API 0.166.2+26.3 and Vultrum's build of Vitrail 0.13.0-beta.vultrum.7, in the same setup with its mods updated. That build was also checked with Sodium 0.9.3-beta.4.
 
 What changed in each version is in the [changelog](CHANGELOG.md).
 
