@@ -2,6 +2,13 @@
 
 What each release changed, for players. Newest first. Downloads are on [GitHub](https://github.com/DebZakari/Vultrum/releases) and [Modrinth](https://modrinth.com/mod/vultrum).
 
+## 0.1.0-alpha.10 (2026-11-13)
+
+- Added **Display Shadow Limit** on Vultrum's Culling page in Sodium's video settings, **on by default**. With a shader pack that keeps entity shadows to a shorter distance than terrain shadows, item and block displays past that distance now leave the shadow map, as other entities already do. In a test with rows of displays past that distance it gave about 18% more FPS and a 25% better 1% low, and shadows looked the same. Text displays are not affected, and packs without a shorter entity shadow distance are unchanged.
+- Added **EMF Shadow Frame Skip** in the Compatibility group on the same page, **off by default**. It lets Entity Model Features reuse a mob's last pose in Vitrail's shadow map instead of animating it a second time each frame, as EMF already does under Iris. In a test with 260 animated mobs in view it gave about 6% more FPS. With Vultrum's build of Vitrail 0.13.0-beta.vultrum.6, mobs in view already reuse their pose there, so the setting then helps only with mobs out of view. It needs Entity Model Features 3.3.12 or a later 3.3 version, with Iris absent.
+
+Both settings take effect after a restart. Checked on the RTX 3090 with Sodium 0.9.3-beta.4, Fabric API 0.165.2+26.3, Vultrum's build of Vitrail 0.13.0-beta.vultrum.6 and a full mod setup. The published performance charts still describe alpha.5.
+
 ## 0.1.0-alpha.9 (2026-10-22)
 
 - Faster Punchy Hands now supports Punchy 2.8g as well as 2.8f-hotfix. Settings and defaults are unchanged.
