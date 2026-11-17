@@ -106,6 +106,13 @@ def synchronize(project_id, token, *, apply=False, audit=False):
     snapshot = {k: before.get(k) for k in SNAPSHOT_FIELDS}
     print("PROJECT_BEFORE_JSON=" + json.dumps(snapshot, separators=(",", ":")))
     if audit:
+        versions = request(path + "/version", token)
+        fields = ("id", "name", "version_number", "version_type", "dependencies", "game_versions", "loaders", "files")
+        print("VERSIONS_JSON=" + json.dumps([{k: v.get(k) for k in fields} for v in versions], separators=(",", ":")))
+        ids = sorted({d["project_id"] for v in versions for d in v.get("dependencies", []) if d.get("project_id")})
+        if ids:
+            dependencies = request("/projects?" + urlencode({"ids": json.dumps(ids)}), token)
+            print("DEPENDENCIES_JSON=" + json.dumps({d["id"]: d["slug"] for d in dependencies}, separators=(",", ":")))
         return
     desired = desired_fields()
     patch = {k: v for k, v in desired.items() if before.get(k) != v}

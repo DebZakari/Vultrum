@@ -27,6 +27,14 @@ class ProjectPageTest(unittest.TestCase):
         self.assertIn('PROJECT_PATCH_JSON={"description":"new","body":"new"}', output.getvalue())
         self.assertNotIn("credential", output.getvalue())
 
+    def test_audit_reads_version_metadata_without_writes(self):
+        with patch.object(sync, "request", side_effect=[self.project(), [{"id": "version", "dependencies": []}]]) as request, \
+                contextlib.redirect_stdout(io.StringIO()) as output:
+            sync.synchronize("LV34xpJ5", "credential", audit=True)
+        self.assertEqual(request.call_count, 2)
+        self.assertTrue(all(not call.kwargs for call in request.call_args_list))
+        self.assertIn('VERSIONS_JSON=[{"id":"version"', output.getvalue())
+
     def test_apply_only_changed_fields_then_verifies_stored_values(self):
         before = self.project()
         after = before | {"body": "new"}
