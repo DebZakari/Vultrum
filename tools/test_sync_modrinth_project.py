@@ -1,6 +1,7 @@
 import contextlib
 import io
 import unittest
+import urllib.error
 from unittest.mock import patch
 
 import sync_modrinth_project as sync
@@ -34,6 +35,17 @@ class ProjectPageTest(unittest.TestCase):
         self.assertEqual(request.call_count, 2)
         self.assertTrue(all(not call.kwargs for call in request.call_args_list))
         self.assertIn('VERSIONS_JSON=[{"id":"version"', output.getvalue())
+
+    def test_api_diagnostic_redacts_the_credential(self):
+        error = urllib.error.HTTPError("https://api.modrinth.com/v2/project/id", 400, "invalid", {},
+                                       io.BytesIO(b'{"description":"Rejected credential and mrp_anotherToken"}'))
+        with patch.object(sync.urllib.request, "build_opener") as opener:
+            opener.return_value.open.side_effect = error
+            with self.assertRaises(PublishError) as raised:
+                sync.request("/project/id", "credential", method="PATCH", data={"body": "text"})
+        self.assertNotIn("credential", str(raised.exception))
+        self.assertNotIn("mrp_anotherToken", str(raised.exception))
+        self.assertIn("PATCH /project/id failed (HTTP 400)", str(raised.exception))
 
     def test_apply_only_changed_fields_then_verifies_stored_values(self):
         before = self.project()

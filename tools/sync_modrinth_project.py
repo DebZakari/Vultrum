@@ -34,7 +34,15 @@ def request(path, token, *, method="GET", data=None):
             content = response.read()
             return json.loads(content) if content else None
     except urllib.error.HTTPError as error:
-        raise PublishError(f"Modrinth project request failed (HTTP {error.code}). Check scopes and project access.") from None
+        detail = ""
+        try:
+            message = json.load(error).get("description", "")
+            if isinstance(message, str):
+                detail = re.sub(r"mr[psoa]_[A-Za-z0-9]+", "[redacted]", message.replace(token, "[redacted]"))[:400]
+        except (ValueError, AttributeError):
+            pass
+        endpoint = path.split("?", 1)[0]
+        raise PublishError(f"Modrinth {method} {endpoint} failed (HTTP {error.code}). {detail}") from None
     except (urllib.error.URLError, TimeoutError):
         raise PublishError("Modrinth connection failed. Audit the current page before retrying a write.") from None
 
