@@ -180,7 +180,11 @@ def synchronize_release_titles(project_id, token, *, apply=False):
         if after.get("name") != change["name"]:
             raise PublishError("Stored release title differs from the requested value.")
         for key, value in before.items():
-            if key not in {"name", "downloads"} and after.get(key) != value:
+            stored = after.get(key)
+            if key in {"dependencies", "game_versions", "loaders"}:
+                value = sorted(json.dumps(v, sort_keys=True) for v in value)
+                stored = sorted(json.dumps(v, sort_keys=True) for v in (stored or []))
+            if key not in {"name", "downloads"} and stored != value:
                 raise PublishError(f"Release {key} changed while updating its title; inspect the stored version.")
     print("Release titles verified; version numbers, files and dependency pins preserved.")
 

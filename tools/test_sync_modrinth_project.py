@@ -122,6 +122,15 @@ class ProjectPageTest(unittest.TestCase):
             sync.synchronize_release_titles("LV34xpJ5", "credential")
         self.assertEqual(request.call_count, 2)
 
+    def test_release_title_verification_rejects_a_changed_binary(self):
+        version = {"id": "release", "version_number": "0.1.0-alpha.1+mc26.3", "name": "old",
+                   "files": [{"hashes": {"sha512": "original"}}]}
+        after = version | {"name": "Vultrum 0.1.0-alpha.1", "files": [{"hashes": {"sha512": "changed"}}]}
+        with patch.object(sync, "request", side_effect=[self.project(), [version], None, after]), \
+                contextlib.redirect_stdout(io.StringIO()):
+            with self.assertRaisesRegex(PublishError, "files changed"):
+                sync.synchronize_release_titles("LV34xpJ5", "credential", apply=True)
+
 
 if __name__ == "__main__":
     unittest.main()
