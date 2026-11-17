@@ -1,0 +1,52 @@
+name: Update Modrinth project page
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Audit the current page, preview changes, or apply them
+        required: true
+        default: audit
+        type: choice
+        options:
+          - audit
+          - preview
+          - apply
+
+permissions:
+  contents: read
+
+concurrency:
+  group: modrinth-project-page
+  cancel-in-progress: false
+
+jobs:
+  page:
+    if: github.repository == 'DebZakari/Vultrum' && vars.MODRINTH_PROJECT_ID != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Test project synchronizer
+        run: python3 -m unittest discover -s tools -p 'test_sync_modrinth_project.py'
+      - name: Audit current page
+        if: inputs.operation == 'audit'
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          MODRINTH_PROJECT_ID: ${{ vars.MODRINTH_PROJECT_ID }}
+        run: python3 tools/sync_modrinth_project.py --audit
+      - name: Preview page changes
+        if: inputs.operation == 'preview'
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          MODRINTH_PROJECT_ID: ${{ vars.MODRINTH_PROJECT_ID }}
+        run: python3 tools/sync_modrinth_project.py
+      - name: Apply page changes
+        if: inputs.operation == 'apply'
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          MODRINTH_PROJECT_ID: ${{ vars.MODRINTH_PROJECT_ID }}
+        run: python3 tools/sync_modrinth_project.py --apply

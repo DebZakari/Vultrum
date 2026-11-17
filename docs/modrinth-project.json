@@ -1,0 +1,8 @@
+{
+  "title": "Vultrum",
+  "description": "More FPS with Vitrail shader packs and smoother chunk loading for Minecraft 26.3 on Vulkan. A client-side Sodium add-on for Fabric.",
+  "source_url": "https://github.com/DebZakari/Vultrum",
+  "issues_url": "https://github.com/DebZakari/Vultrum/issues",
+  "client_side": "required",
+  "server_side": "unsupported"
+}
