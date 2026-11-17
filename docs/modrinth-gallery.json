@@ -1,0 +1,37 @@
+[
+  {
+    "raw_url": "https://cdn.modrinth.com/data/LV34xpJ5/images/99d0507fadbab248bb9063b0bc55062c07a200c7.jpeg",
+    "title": "Dark forest: +30% FPS (Alpha.5)",
+    "description": "The same view without Vultrum (left) and with it (right): 272 to 354 FPS (+30%). Render distance 32. Vultrum 0.1.0-alpha.5, custom Vitrail 0.13.0-beta.vultrum.1, Complementary Unbound, 1920x1080, RTX 3090 / Ryzen 5 5600X. Sodium 0.9.3-alpha.1 and Fabric API 0.162.0+26.3; mean of two runs after warm-up."
+  },
+  {
+    "raw_url": "https://cdn.modrinth.com/data/LV34xpJ5/images/3591c467a8c9d62ce418162d3990d6dbe9240681.jpeg",
+    "title": "Snowy peaks: +13% FPS (Alpha.5)",
+    "description": "The same view without Vultrum (left) and with it (right): 264 to 299 FPS (+13%). Render distance 32. Vultrum 0.1.0-alpha.5, custom Vitrail 0.13.0-beta.vultrum.1, Complementary Unbound, 1920x1080, RTX 3090 / Ryzen 5 5600X. Sodium 0.9.3-alpha.1 and Fabric API 0.162.0+26.3; mean of two runs after warm-up."
+  },
+  {
+    "raw_url": "https://cdn.modrinth.com/data/LV34xpJ5/images/3b1c72ef23c67a65aa204686b392759befebda1a.jpeg",
+    "title": "Savanna hillside: +13% FPS (Alpha.5)",
+    "description": "The same view without Vultrum (left) and with it (right): 332 to 376 FPS (+13%). Render distance 32. Vultrum 0.1.0-alpha.5, custom Vitrail 0.13.0-beta.vultrum.1, Complementary Unbound, 1920x1080, RTX 3090 / Ryzen 5 5600X. Sodium 0.9.3-alpha.1 and Fabric API 0.162.0+26.3; mean of two runs after warm-up."
+  },
+  {
+    "raw_url": "https://cdn.modrinth.com/data/LV34xpJ5/images/3dc5931ad4285cf0b95395e338dd01c95308c287.jpeg",
+    "title": "Savanna valley: +11% FPS (Alpha.5)",
+    "description": "The same view without Vultrum (left) and with it (right): 299 to 331 FPS (+11%). Render distance 32. Vultrum 0.1.0-alpha.5, custom Vitrail 0.13.0-beta.vultrum.1, Complementary Unbound, 1920x1080, RTX 3090 / Ryzen 5 5600X. Sodium 0.9.3-alpha.1 and Fabric API 0.162.0+26.3; mean of two runs after warm-up."
+  },
+  {
+    "raw_url": "https://cdn.modrinth.com/data/LV34xpJ5/images/247acfefbad49ac36ee8861792d570fe2cb50c4e.jpeg",
+    "title": "Village: +9% FPS (Alpha.5)",
+    "description": "The same view without Vultrum (left) and with it (right): 390 to 424 FPS (+9%). Render distance 32. Vultrum 0.1.0-alpha.5, custom Vitrail 0.13.0-beta.vultrum.1, Complementary Unbound, 1920x1080, RTX 3090 / Ryzen 5 5600X. Sodium 0.9.3-alpha.1 and Fabric API 0.162.0+26.3; mean of two runs after warm-up."
+  },
+  {
+    "raw_url": "https://cdn.modrinth.com/data/LV34xpJ5/images/e1b306a862c0070490d14ee03cefcd64e44f345c.png",
+    "title": "Average FPS at 32 chunks (Alpha.5)",
+    "description": "Seven scenes standing still, with shaders. Render distance 32. Vultrum 0.1.0-alpha.5, custom Vitrail 0.13.0-beta.vultrum.1, Complementary Unbound, 1920x1080, RTX 3090 / Ryzen 5 5600X. Sodium 0.9.3-alpha.1 and Fabric API 0.162.0+26.3; mean of two runs after warm-up."
+  },
+  {
+    "raw_url": "https://cdn.modrinth.com/data/LV34xpJ5/images/a226a513f66c652ab45b5f382ae796fc4b86e841.png",
+    "title": "1% low FPS while flying (Alpha.5)",
+    "description": "Flying into new terrain at 30 blocks a second. At 32 chunks, 1% low FPS was 17 to 24% higher with Vultrum. Frame-time lows fluctuate between runs. Vultrum 0.1.0-alpha.5, custom Vitrail 0.13.0-beta.vultrum.1, Complementary Unbound, 1920x1080, RTX 3090 / Ryzen 5 5600X. Sodium 0.9.3-alpha.1 and Fabric API 0.162.0+26.3; mean of two runs after warm-up."
+  }
+]

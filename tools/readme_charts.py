@@ -179,10 +179,10 @@ def build_charts():
                for rd in (32, 16) for case, label in FLIGHTS.items()]
     return {
         "fps": dict(title="Average FPS with shaders at 32 chunks",
-                    subtitle="Standing still. Complementary Unbound through Vitrail, 1920×1080, RTX 3090.",
+                    subtitle="Alpha.5 · custom Vitrail .1 · Complementary Unbound · 1080p · RTX 3090 · RD32.",
                     rows=rows, unit="FPS, higher is better"),
         "flight": dict(title="1% low FPS while flying into new terrain",
-                       subtitle="30 blocks a second, 30 blocks above the ground. Same setup.",
+                       subtitle="Alpha.5 · custom Vitrail .1 · 1080p · RTX 3090 · 30 blocks/s, 30 blocks above ground.",
                        rows=flights, unit="1% low FPS, higher is better"),
     }
 

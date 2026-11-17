@@ -8,6 +8,11 @@ from publish_modrinth import PublishError
 
 
 class ProjectPageTest(unittest.TestCase):
+    def setUp(self):
+        gallery = patch.object(sync, "desired_gallery", return_value=[])
+        gallery.start()
+        self.addCleanup(gallery.stop)
+
     def project(self):
         return {"id": "LV34xpJ5", "title": "Vultrum", "project_type": "mod",
                 "description": "old", "body": "old", "status": "processing", "requested_status": "approved",
@@ -63,6 +68,21 @@ class ProjectPageTest(unittest.TestCase):
         self.assertNotIn("## Building", body)
         self.assertIn(sync.RAW + "docs/images/fps.png", body)
         self.assertIn(sync.WEB + "/blob/main/LICENSE", body)
+
+    def test_gallery_updates_only_the_exact_existing_image_caption(self):
+        current = [{"url": "preview", "raw_url": "original", "title": "old", "featured": True, "ordering": 0}]
+        self.assertEqual(sync.gallery_changes(current, [{"raw_url": "original", "title": "new"}]),
+                         [{"url": "original", "title": "new"}])
+        self.assertEqual(sync.gallery_changes(current, [{"raw_url": "original", "title": "old"}]), [])
+
+    def test_missing_gallery_image_stops_before_writes(self):
+        with patch.object(sync, "request", return_value=self.project()) as request, \
+                patch.object(sync, "desired_fields", return_value={"body": "new"}), \
+                patch.object(sync, "desired_gallery", return_value=[{"raw_url": "missing", "title": "new"}]), \
+                contextlib.redirect_stdout(io.StringIO()):
+            with self.assertRaises(PublishError):
+                sync.synchronize("LV34xpJ5", "credential", apply=True)
+        self.assertEqual(request.call_count, 1)
 
 
 if __name__ == "__main__":

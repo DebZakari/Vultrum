@@ -8,6 +8,7 @@ from pathlib import Path
 import re
 import urllib.error
 import urllib.request
+from urllib.parse import urlencode
 
 from publish_modrinth import API, NoRedirect, PublishError, USER_AGENT
 
@@ -69,6 +70,24 @@ def desired_fields():
     return config | {"body": project_body((ROOT / "README.md").read_text(encoding="utf-8"))}
 
 
+def desired_gallery():
+    return json.loads((ROOT / "docs/modrinth-gallery.json").read_text(encoding="utf-8"))
+
+
+def gallery_changes(current, desired):
+    changes = []
+    for item in desired:
+        if not item.keys() <= {"raw_url", "title", "description"} or not item.get("raw_url"):
+            raise PublishError("Gallery metadata must identify an existing image and its caption.")
+        matches = [image for image in current if item["raw_url"] == image.get("raw_url", image["url"])]
+        if len(matches) != 1:
+            raise PublishError("A managed gallery image is missing or duplicated; audit the gallery.")
+        fields = {k: v for k, v in item.items() if k != "raw_url" and matches[0].get(k) != v}
+        if fields:
+            changes.append({"url": item["raw_url"], **fields})
+    return changes
+
+
 def validate_project(project, project_id):
     if not re.fullmatch(r"[A-Za-z0-9]{8}", project_id):
         raise PublishError("Expected a stable eight-character project ID.")
@@ -90,23 +109,34 @@ def synchronize(project_id, token, *, apply=False, audit=False):
         return
     desired = desired_fields()
     patch = {k: v for k, v in desired.items() if before.get(k) != v}
+    captions = desired_gallery()
+    gallery = gallery_changes(before.get("gallery", []), captions)
     print("Changed project fields: " + (", ".join(sorted(patch)) or "none"))
+    print("Changed gallery captions: " + str(len(gallery)))
     if not apply:
         print("PROJECT_PATCH_JSON=" + json.dumps(patch, separators=(",", ":")))
+        print("GALLERY_PATCH_JSON=" + json.dumps(gallery, separators=(",", ":")))
         print("Dry run: no project fields changed.")
         return
     if patch:
         request(path, token, method="PATCH", data=patch)
+    for caption in gallery:
+        request(path + "/gallery?" + urlencode(caption), token, method="PATCH")
     after = request(path, token)
     validate_project(after, project_id)
     for key, value in desired.items():
         if after.get(key) != value:
             raise PublishError(f"Stored project {key} differs from the requested value.")
-    for key in ("status", "requested_status", "slug", "versions", "gallery", "icon_url"):
+    if gallery_changes(after.get("gallery", []), captions):
+        raise PublishError("Stored gallery captions differ from the requested values.")
+    identities = lambda images: {(i.get("raw_url", i["url"]), i.get("featured"), i.get("ordering")) for i in images}
+    if identities(before.get("gallery", [])) != identities(after.get("gallery", [])):
+        raise PublishError("Gallery images or their ordering changed; inspect the stored gallery.")
+    for key in ("status", "requested_status", "slug", "versions", "icon_url", "license", "categories", "additional_categories"):
         if after.get(key) != before.get(key):
             raise PublishError(f"Project {key} changed during synchronization; inspect the stored project.")
     print("PROJECT_AFTER_JSON=" + json.dumps({k: after.get(k) for k in SNAPSHOT_FIELDS}, separators=(",", ":")))
-    print("Project content verified; moderation, slug, versions, icon and gallery preserved.")
+    print("Project content and gallery captions verified; moderation, slug, versions, icon and gallery images preserved.")
 
 
 def main():

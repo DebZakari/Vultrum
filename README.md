@@ -22,7 +22,7 @@
 <p align="center">
   <img src="docs/images/hero.webp" alt="The same view without Vultrum on the left and with it on the right, with a divider sweeping across. Dark forest 272 to 354 FPS (+30%); Snowy peaks 264 to 299 FPS (+13%); Savanna hillside 332 to 376 FPS (+13%). Both sides look the same.">
   <br>
-  <sub>Left without Vultrum, right with it. The same picture, more frames.</sub>
+  <sub>Left without Vultrum, right with it. Measured with Alpha.5 and custom Vitrail .1; full setup below.</sub>
 </p>
 
 > [!NOTE]
@@ -62,7 +62,7 @@ How much you gain depends on how much of the view is hidden. In a dark forest mo
 
 While flying at 32 chunks, 1% low FPS was 17 to 24% higher with Vultrum. These lows and the longest frames fluctuate between runs.
 
-Vitrail in these runs was [Vultrum's build of Vitrail](https://github.com/DebZakari/vitrail-shaders/releases/tag/0.13.0-beta.vultrum.1), which has a few speedups that Vitrail's own release doesn't have yet. With Vitrail from Modrinth, FPS will be somewhat lower overall.
+Vitrail in these runs was [Vultrum's build of Vitrail](https://github.com/DebZakari/vitrail-shaders/releases/tag/0.13.0-beta.vultrum.1). The results apply to that exact build and dependency set.
 
 <details>
 <summary>All numbers</summary>
@@ -151,7 +151,7 @@ GPU Occlusion Culling falls back to ordinary terrain drawing when the device is 
 
 The **Compatibility** group on the Culling page also offers **Faster Punchy Hands**, off by default. It reduces Punchy's first-person shader-check overhead without skipping hand animations. It needs Punchy 2.8f-hotfix or 2.8g and a supported Vitrail version, with Iris absent. Other versions leave the hook disabled. Changing it takes effect after a restart.
 
-**EMF Shadow Frame Skip**, in the same group and off by default, lets Entity Model Features reuse a mob's last pose in Vitrail's shadow map instead of animating it a second time each frame, as EMF already does under Iris. In a test with 260 animated mobs in view it gave about 6% more FPS, and a view without mobs didn't change. A mob out of view whose shadow falls into view can hold its last pose. With Vultrum's build of Vitrail 0.13.0-beta.vultrum.6, mobs in view already reuse their pose in the shadow map, so the setting then helps only with mobs out of view. It needs Entity Model Features 3.3.12 or a later 3.3 version and a supported Vitrail version, with Iris absent, and follows EMF's own setting for skipping shadow frames. Changing it takes effect after a restart.
+**EMF Shadow Frame Skip**, in the same group and off by default, lets Entity Model Features reuse a mob's last pose in Vitrail's shadow map instead of animating it a second time each frame, as EMF already does under Iris. In a test with 260 animated mobs in view it gave about 6% more FPS, and a view without mobs didn't change. A mob out of view whose shadow falls into view can hold its last pose. With Vultrum's build of Vitrail 0.13.0-beta.vultrum.6 or newer, mobs in view already reuse their pose in the shadow map, so the setting then helps only with mobs out of view. It needs Entity Model Features 3.3.12 or a later 3.3 version and a supported Vitrail version, with Iris absent, and follows EMF's own setting for skipping shadow frames. Changing it takes effect after a restart.
 
 Resource-pack reloads now refresh player-head icons. Alpha.8 fixes the crash reproduced when subsequently switching shaders off and back on in the tested full mod setup.
 
@@ -171,7 +171,7 @@ Vultrum is client-side. It works in singleplayer and on servers, and the server 
 
 GPU occlusion culling automatically adapts to the GPU's compute limits, including devices without subgroup arithmetic or with 128-thread workgroups. Both compute paths have been checked on the RTX 3090; AMD and Intel hardware remain untested.
 
-Tested on Vulkan together with Vitrail and Complementary Unbound, all in one instance, with no errors from Vultrum:
+The mods below were checked together on Vulkan with Vitrail and Complementary Unbound, with no errors from Vultrum. Checked versions are listed under Install; newer mod releases can change compatibility.
 
 These compatibility checks use default settings. Skip Sunless Terrain additionally passed light-update, reload and shadow-image checks with ScalableLux 0.3.0-alpha.0.6+26.3, Vitrail 0.13.0-beta.vultrum.1 and Complementary Unbound r5.9.3. It remains off by default.
 
@@ -185,6 +185,7 @@ Wakes Reforged 1.4.1 wake trails passed shader toggle, resource reload and rejoi
 Doesn't work with:
 
 - **Nvidium** and **Reese's Sodium Options.** Both need Sodium 0.9.2, so the game won't start with them and Vultrum. Nvidium is also OpenGL only.
+- **Polytone 26.3-6.8.6-alpha with Sodium 0.9.3-beta.5.** This combination crashes when joining a world because Polytone's Sodium hook no longer matches. It is the latest Polytone build available for Fabric 26.3 as checked on 17 November 2026. Leave it out of this combination until a compatible build is available.
 - **Iris shaders.** Iris switches itself off on Vulkan, so its packs need OpenGL. It loads next to Vultrum without problems, it just won't draw a pack. Use Vitrail for shader packs on Vulkan.
 - **Distant Horizons with Iris** on Vulkan. Distant Horizons picks OpenGL when Iris is installed and stops the game with a dialog. With Vitrail instead of Iris it works.
 - Other mods that only render with OpenGL.
@@ -216,6 +217,8 @@ Open an issue with:
 `./gradlew build` with JDK 25. The jar ends up in `build/libs/`.
 
 To help test another GPU, use the [reproducible tester setup](bench/TESTING.md). It pins the shader build, pack and settings and saves results locally.
+
+The Modrinth project page is generated from this README by `tools/sync_modrinth_project.py`, with project metadata in `docs/modrinth-project.json`. The **Update Modrinth project page** workflow can audit the stored page, preview a change or apply it. It verifies the saved content and preserves project moderation status and published versions. Benchmark charts are drawn from the recorded series in `tools/readme_charts.py`.
 
 ## Licence
 
