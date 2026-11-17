@@ -92,7 +92,7 @@ class ProjectPageTest(unittest.TestCase):
     def test_gallery_updates_only_the_exact_existing_image_caption(self):
         current = [{"url": "preview", "raw_url": "original", "title": "old", "featured": True, "ordering": 0}]
         self.assertEqual(sync.gallery_changes(current, [{"raw_url": "original", "title": "new"}]),
-                         [{"url": "original", "title": "new"}])
+                         [{"url": "preview", "title": "new"}])
         self.assertEqual(sync.gallery_changes(current, [{"raw_url": "original", "title": "old"}]), [])
 
     def test_missing_gallery_image_stops_before_writes(self):
@@ -103,6 +103,24 @@ class ProjectPageTest(unittest.TestCase):
             with self.assertRaises(PublishError):
                 sync.synchronize("LV34xpJ5", "credential", apply=True)
         self.assertEqual(request.call_count, 1)
+
+    def test_release_title_update_preserves_the_pinned_dependencies_and_binary(self):
+        version = {"id": "release", "version_number": "0.1.0-alpha.1+mc26.3", "name": "old",
+                   "dependencies": [{"project_id": "sodium", "version_id": "pinned"}],
+                   "files": [{"hashes": {"sha512": "original"}}]}
+        after = version | {"name": "Vultrum 0.1.0-alpha.1"}
+        with patch.object(sync, "request", side_effect=[self.project(), [version], None, after]) as request, \
+                contextlib.redirect_stdout(io.StringIO()):
+            sync.synchronize_release_titles("LV34xpJ5", "credential", apply=True)
+        self.assertEqual(request.call_args_list[2].kwargs,
+                         {"method": "PATCH", "data": {"name": "Vultrum 0.1.0-alpha.1"}})
+
+    def test_release_title_preview_does_not_write(self):
+        version = {"id": "release", "version_number": "0.1.0-alpha.1+mc26.3", "name": "old"}
+        with patch.object(sync, "request", side_effect=[self.project(), [version]]) as request, \
+                contextlib.redirect_stdout(io.StringIO()):
+            sync.synchronize_release_titles("LV34xpJ5", "credential")
+        self.assertEqual(request.call_count, 2)
 
 
 if __name__ == "__main__":

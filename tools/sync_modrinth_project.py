@@ -92,7 +92,7 @@ def gallery_changes(current, desired):
             raise PublishError("A managed gallery image is missing or duplicated; audit the gallery.")
         fields = {k: v for k, v in item.items() if k != "raw_url" and matches[0].get(k) != v}
         if fields:
-            changes.append({"url": item["raw_url"], **fields})
+            changes.append({"url": matches[0]["url"], **fields})
     return changes
 
 
@@ -154,16 +154,52 @@ def synchronize(project_id, token, *, apply=False, audit=False):
     print("Project content and gallery captions verified; moderation, slug, versions, icon and gallery images preserved.")
 
 
+def synchronize_release_titles(project_id, token, *, apply=False):
+    if not token or not re.fullmatch(r"[A-Za-z0-9]{8}", project_id):
+        raise PublishError("Set a project ID and the MODRINTH_TOKEN repository secret.")
+    project = request("/project/" + project_id, token)
+    validate_project(project, project_id)
+    versions = request("/project/" + project_id + "/version", token)
+    changes = []
+    for version in versions:
+        number = version["version_number"]
+        if not re.fullmatch(r"\d+\.\d+\.\d+(?:-(?:alpha|beta)\.\d+)?\+mc\d+(?:\.\d+)+", number):
+            continue
+        name = "Vultrum " + number.split("+", 1)[0]
+        if version["name"] != name:
+            changes.append({"id": version["id"], "before": version["name"], "name": name})
+    print("RELEASE_TITLE_PATCH_JSON=" + json.dumps(changes, separators=(",", ":")))
+    if not apply:
+        print("Dry run: no release titles changed.")
+        return
+    for change in changes:
+        path = "/version/" + change["id"]
+        before = next(v for v in versions if v["id"] == change["id"])
+        request(path, token, method="PATCH", data={"name": change["name"]})
+        after = request(path, token)
+        if after.get("name") != change["name"]:
+            raise PublishError("Stored release title differs from the requested value.")
+        for key, value in before.items():
+            if key not in {"name", "downloads"} and after.get(key) != value:
+                raise PublishError(f"Release {key} changed while updating its title; inspect the stored version.")
+    print("Release titles verified; version numbers, files and dependency pins preserved.")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--audit", action="store_true")
     parser.add_argument("--apply", action="store_true")
+    parser.add_argument("--release-titles", action="store_true")
     args = parser.parse_args()
-    if args.audit and args.apply:
+    if args.audit and (args.apply or args.release_titles):
         parser.error("Choose audit or apply.")
     try:
-        synchronize(os.environ.get("MODRINTH_PROJECT_ID", ""), os.environ.get("MODRINTH_TOKEN", ""),
-                    apply=args.apply, audit=args.audit)
+        if args.release_titles:
+            synchronize_release_titles(os.environ.get("MODRINTH_PROJECT_ID", ""), os.environ.get("MODRINTH_TOKEN", ""),
+                                       apply=args.apply)
+        else:
+            synchronize(os.environ.get("MODRINTH_PROJECT_ID", ""), os.environ.get("MODRINTH_TOKEN", ""),
+                        apply=args.apply, audit=args.audit)
     except (PublishError, OSError, ValueError, KeyError) as error:
         raise SystemExit(str(error)) from None
 

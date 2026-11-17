@@ -12,6 +12,8 @@ on:
           - audit
           - preview
           - apply
+          - preview-titles
+          - apply-titles
 
 permissions:
   contents: read
@@ -50,3 +52,15 @@ jobs:
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
           MODRINTH_PROJECT_ID: ${{ vars.MODRINTH_PROJECT_ID }}
         run: python3 tools/sync_modrinth_project.py --apply
+      - name: Preview release titles
+        if: inputs.operation == 'preview-titles'
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          MODRINTH_PROJECT_ID: ${{ vars.MODRINTH_PROJECT_ID }}
+        run: python3 tools/sync_modrinth_project.py --release-titles
+      - name: Apply release titles
+        if: inputs.operation == 'apply-titles'
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          MODRINTH_PROJECT_ID: ${{ vars.MODRINTH_PROJECT_ID }}
+        run: python3 tools/sync_modrinth_project.py --release-titles --apply
